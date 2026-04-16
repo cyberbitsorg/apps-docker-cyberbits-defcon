@@ -1,0 +1,13 @@
+# Local .terraform directories
+**/.terraform/
+
+# tfvars may contain sensitive data
+terraform.tfvars
+
+# State files contain sensitive data (use remote state in production)
+*.tfstate
+*.tfstate.backup
+
+# Crash logs
+crash.log
+crash.*.log

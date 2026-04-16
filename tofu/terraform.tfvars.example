@@ -1,0 +1,69 @@
+# =============================================================================
+# terraform.tfvars.example — Configuration Reference
+# =============================================================================
+#
+# Copy this file to terraform.tfvars and fill in the required values.
+# Commented-out variables show their default — uncomment only to override.
+#
+# BEFORE FIRST RUN
+#   1. Set DNS A record for defcon_domain → your server IP.
+#   2. Fill in the three REQUIRED fields below.
+#   3. tofu init && tofu plan && tofu apply
+#
+# =============================================================================
+
+# =============================================================================
+# CONNECTION
+# =============================================================================
+
+# Remote Docker daemon over SSH (recommended for VPS deployments):
+docker_host = "ssh://deploy@your-server.example.com"
+remote_host = "deploy@your-server.example.com"
+
+# Local Docker socket (for local testing):
+# docker_host = "unix:///var/run/docker.sock"
+# remote_host = ""
+
+# =============================================================================
+# GLOBAL SETTINGS
+# =============================================================================
+
+# Email for Let's Encrypt certificate notifications.
+admin_email = "you@example.com"
+
+# Root directory on the server for all application data.
+# base_app_dir = "/opt"
+
+# =============================================================================
+# TRAEFIK GATEWAY
+# =============================================================================
+
+# Set to false if Traefik is already running on this server.
+# The traefik_network must already exist (e.g. created by another stack).
+# deploy_traefik = true
+
+# Traefik image tag — update here to upgrade.
+# traefik_version = "v3.6"
+
+# Enable the Traefik dashboard — keep false in production.
+# traefik_dashboard_enabled = false
+
+# =============================================================================
+# DEFCON DASHBOARD
+# =============================================================================
+
+# Public domain — must have a valid DNS A record before applying.
+defcon_domain = "defcon.example.com"
+
+# Login password for the dashboard (shown on the login screen).
+defcon_admin_password = "change-me-strong-password"
+
+# How often to fetch new articles (minutes).
+# defcon_fetch_interval_minutes = 60
+
+# Memory limits (MiB) — tune for your VPS size.
+# defcon_postgres_memory_limit    = 512
+# defcon_redis_memory_limit       = 256
+# defcon_aggregator_memory_limit  = 512
+# defcon_api_gateway_memory_limit = 256
+# defcon_frontend_memory_limit    = 128

@@ -1,0 +1,20 @@
+{
+  "name": "defcon-api-gateway",
+  "version": "1.0.0",
+  "description": "Cybersecurity Defcon Dashboard API Gateway",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.13.1",
+    "uuid": "^11.0.3"
+  }
+}
