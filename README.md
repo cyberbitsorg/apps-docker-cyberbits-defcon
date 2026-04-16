@@ -39,15 +39,15 @@ A self-hosted dashboard that aggregates cybersecurity news from RSS feeds, dedup
 
 ### Networks
 
-**Local / dev (Docker Compose)**
+**Local / dev**
 
-- **internal** — PostgreSQL and Redis are isolated; only accessible by the aggregator and API gateway
-- **external** — News aggregator, API gateway, and frontend
+- internal. PostgreSQL and Redis are isolated; only accessible by the aggregator and API gateway
+- external. News aggregator, API gateway, and frontend
 
-**Production (OpenTofu)**
+**Production**
 
-- **defcon-internal** — PostgreSQL, Redis, news aggregator, and API gateway (isolated bridge)
-- **traefik** — API gateway and frontend; shared with the Traefik reverse proxy, which uses Docker labels on this network to discover and route traffic
+- defcon-internal. PostgreSQL, Redis, news aggregator, and API gateway (isolated bridge)
+- traefik. API gateway and frontend; shared with the Traefik reverse proxy, which uses Docker labels on this network to discover and route traffic
 
 The API gateway joins both production networks: `defcon-internal` to reach PostgreSQL, Redis, and the aggregator, and `traefik` so the frontend Nginx proxy can reach it at `http://api-gateway:4000`.
 
@@ -107,8 +107,8 @@ cp terraform.tfvars.example terraform.tfvars
 Get it up and running:
 
 ```bash
-tofu validate
 tofu init
+tofu validate
 tofu plan
 tofu apply
 ```
@@ -123,15 +123,15 @@ Minimum required values in `terraform.tfvars`:
 | `defcon_domain` | `defcon.example.com` |
 | `defcon_admin_password` | `a-strong-password` |
 
-### Shared Traefik
+### Traefik
 
-If Traefik is already running on the server (deployed by another stack), set:
+By default, `deploy_traefik = false`. The dashboard assumes Traefik is already running on the server (e.g. deployed by a shared gateway stack). The `traefik` Docker network must already exist; the dashboard containers join it automatically.
+
+To let this stack deploy its own Traefik instance instead, set:
 
 ```hcl
-deploy_traefik = false
+deploy_traefik = true
 ```
-
-The `traefik` Docker network must already exist on the server. The dashboard containers join it automatically.
 
 ### Retrieve credentials
 
@@ -149,7 +149,7 @@ tofu apply -replace='module.defcon.docker_image.api_gateway'
 tofu apply -replace='module.defcon.docker_image.frontend'
 ```
 
-Do not use `tofu destroy` to update images — it removes volumes and permanently deletes all data.
+Do not use `tofu destroy` to update images; it removes volumes and permanently deletes all data.
 
 ### Backup
 
@@ -167,7 +167,7 @@ docker run --rm -v defcon-redis-data:/data -v $(pwd):/backup \
 
 ### Destroy
 
-**Warning:** This removes all containers and volumes. All data is permanently deleted.
+Warning: This removes all containers and volumes. All data is permanently deleted.
 
 ```bash
 tofu destroy

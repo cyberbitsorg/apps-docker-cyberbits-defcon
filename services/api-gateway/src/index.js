@@ -15,6 +15,9 @@ const internalRouter = require("./routes/internal");
 
 const app = express();
 
+// Trust the Nginx reverse proxy sitting in front of this service
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cors({
   origin: config.corsOrigin,
@@ -26,6 +29,7 @@ app.use(sessionIdMiddleware);
 
 // Public routes
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/health", healthRouter);
 app.use("/internal", internalRouter);
 
 // All /api/v1/* routes below require a valid JWT
@@ -33,7 +37,6 @@ app.use("/api/v1", authenticate);
 app.use("/api/v1/articles", articlesRouter);
 app.use("/api/v1/defcon", defconRouter);
 app.use("/api/v1/admin", adminRouter);
-app.use("/api/v1/health", healthRouter);
 
 app.use(errorHandler);
 

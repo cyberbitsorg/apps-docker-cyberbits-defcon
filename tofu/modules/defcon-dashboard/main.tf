@@ -88,7 +88,7 @@ resource "docker_image" "frontend" {
   build {
     context    = "${local.services_root}/frontend"
     dockerfile = "Dockerfile"
-    build_arg = {
+    build_args = {
       # Empty string → nginx proxies /api/ internally; no origin baked in
       VITE_API_BASE_URL = ""
     }
@@ -201,7 +201,7 @@ resource "docker_container" "redis" {
 
 resource "docker_container" "news_aggregator" {
   name          = "${var.name_prefix}-news-aggregator"
-  image         = docker_image.news_aggregator.image_id
+  image         = docker_image.news_aggregator.name
   restart       = var.restart_policy
   memory        = var.aggregator_memory_limit
   memory_swap   = var.aggregator_memory_limit
@@ -221,8 +221,14 @@ resource "docker_container" "news_aggregator" {
     aliases = ["news-aggregator"]
   }
 
+  # Needs internet access to fetch RSS feeds from external sources
+  networks_advanced {
+    name    = var.traefik_network
+    aliases = ["news-aggregator"]
+  }
+
   healthcheck {
-    test         = ["CMD-SHELL", "curl -fs http://localhost:8000/health || exit 1"]
+    test         = ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
     interval     = "30s"
     timeout      = "10s"
     retries      = 3
@@ -230,7 +236,8 @@ resource "docker_container" "news_aggregator" {
   }
 
   lifecycle {
-    ignore_changes = [log_driver, log_opts]
+    ignore_changes       = [log_driver, log_opts]
+    replace_triggered_by = [docker_image.news_aggregator.image_id]
   }
 
   depends_on = [docker_container.postgres, docker_container.redis]
@@ -242,7 +249,7 @@ resource "docker_container" "news_aggregator" {
 
 resource "docker_container" "api_gateway" {
   name          = "${var.name_prefix}-api-gateway"
-  image         = docker_image.api_gateway.image_id
+  image         = docker_image.api_gateway.name
   restart       = var.restart_policy
   memory        = var.api_gateway_memory_limit
   memory_swap   = var.api_gateway_memory_limit
@@ -273,8 +280,17 @@ resource "docker_container" "api_gateway" {
     aliases = ["api-gateway"]
   }
 
+  healthcheck {
+    test         = ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/v1/health || exit 1"]
+    interval     = "30s"
+    timeout      = "5s"
+    retries      = 3
+    start_period = "15s"
+  }
+
   lifecycle {
-    ignore_changes = [log_driver, log_opts]
+    ignore_changes       = [log_driver, log_opts]
+    replace_triggered_by = [docker_image.api_gateway.image_id]
   }
 
   depends_on = [docker_container.postgres, docker_container.redis]
@@ -286,7 +302,7 @@ resource "docker_container" "api_gateway" {
 
 resource "docker_container" "frontend" {
   name          = "${var.name_prefix}-frontend"
-  image         = docker_image.frontend.image_id
+  image         = docker_image.frontend.name
   restart       = var.restart_policy
   memory        = var.frontend_memory_limit
   memory_swap   = var.frontend_memory_limit
@@ -327,8 +343,17 @@ resource "docker_container" "frontend" {
     name = var.traefik_network
   }
 
+  healthcheck {
+    test         = ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/ || exit 1"]
+    interval     = "30s"
+    timeout      = "5s"
+    retries      = 3
+    start_period = "10s"
+  }
+
   lifecycle {
-    ignore_changes = [log_driver, log_opts]
+    ignore_changes       = [log_driver, log_opts]
+    replace_triggered_by = [docker_image.frontend.image_id]
   }
 
   depends_on = [docker_container.api_gateway]
