@@ -38,7 +38,7 @@ locals {
   EOT
 
   # ==========================================================================
-  # Source file hashes — trigger image rebuilds on code changes
+  # Source file hashes, triggers image rebuilds on code changes
   # ==========================================================================
 
   news_aggregator_hash = sha1(join("", concat(

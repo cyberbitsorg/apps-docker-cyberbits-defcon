@@ -3,7 +3,7 @@
 # =============================================================================
 
 # =============================================================================
-# Secrets (auto-generated)
+# Secrets
 # =============================================================================
 
 resource "random_password" "postgres" {
@@ -17,7 +17,7 @@ resource "random_password" "auth_secret" {
 }
 
 # =============================================================================
-# Configuration Files
+# Configuration files
 # =============================================================================
 
 resource "null_resource" "deploy_config" {
@@ -53,7 +53,7 @@ resource "docker_volume" "redis_data" {
 }
 
 # =============================================================================
-# Images (built on the remote Docker host from local source)
+# Images
 # =============================================================================
 
 resource "docker_image" "news_aggregator" {
@@ -196,7 +196,7 @@ resource "docker_container" "redis" {
 }
 
 # =============================================================================
-# News Aggregator
+# News aggregator
 # =============================================================================
 
 resource "docker_container" "news_aggregator" {
@@ -221,7 +221,6 @@ resource "docker_container" "news_aggregator" {
     aliases = ["news-aggregator"]
   }
 
-  # Needs internet access to fetch RSS feeds from external sources
   networks_advanced {
     name    = var.traefik_network
     aliases = ["news-aggregator"]
@@ -267,13 +266,13 @@ resource "docker_container" "api_gateway" {
     "ADMIN_PASSWORD=${var.admin_password}",
   ]
 
-  # Internal network — reachable by news-aggregator and for DB/Redis access
+  # Internal network, reachable by news-aggregator and for DB/Redis access
   networks_advanced {
     name    = docker_network.internal.name
     aliases = ["api-gateway"]
   }
 
-  # Traefik network — reachable by the frontend nginx proxy (http://api-gateway:4000)
+  # Traefik network, reachable by the frontend nginx proxy (http://api-gateway:4000)
   # No Traefik label here; nginx handles external routing internally
   networks_advanced {
     name    = var.traefik_network
@@ -297,7 +296,7 @@ resource "docker_container" "api_gateway" {
 }
 
 # =============================================================================
-# Frontend (Nginx)
+# Nginx Frontend
 # =============================================================================
 
 resource "docker_container" "frontend" {

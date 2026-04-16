@@ -2,10 +2,6 @@
 # Traefik module main
 # =============================================================================
 
-# =============================================================================
-# Configuration Files
-# =============================================================================
-
 resource "null_resource" "deploy_config" {
   triggers = {
     content_hash = sha256(join("|", [local.traefik_yml_content, local.dynamic_yml_content]))

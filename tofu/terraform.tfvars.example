@@ -72,7 +72,7 @@ deploy_traefik = false
 # DEFCON DASHBOARD
 # =============================================================================
 
-# Public domain — must have a valid DNS A record before applying.
+# Public domain; must have a valid DNS A record before applying.
 defcon_domain = "defcon.example.com"
 
 # Login password for the dashboard.

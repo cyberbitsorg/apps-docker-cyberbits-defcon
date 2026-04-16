@@ -24,8 +24,6 @@ override.tf.json
 *_override.tf.json
 
 # Ignore CLI configuration files
-.opentofurc
-opentofu.rc
 .terraformrc
 terraform.rc
 
