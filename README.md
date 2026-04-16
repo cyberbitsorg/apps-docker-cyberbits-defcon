@@ -4,13 +4,17 @@ A self-hosted dashboard that aggregates cybersecurity news from RSS feeds, dedup
 
 ## Screenshots
 
-Login screen:
+<div align="center">
+
+**Login screen**
 
 ![DEFCON Login](docs/screenshots/login.png)
 
-Dashboard:
+**Dashboard**
 
 ![DEFCON Dashboard](docs/screenshots/dashboard.png)
+
+</div>
 
 ## Architecture
 
