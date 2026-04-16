@@ -7,8 +7,8 @@ const SOURCE_DISPLAY = {
   reuters: "Reuters",
 };
 
-async function getArticles({ limit = 20, offset = 0, source, unreadOnly, sessionId }) {
-  const params = [limit, offset, sessionId];
+async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId }) {
+  const params = [limit, offset, userId];
   const conditions = ["a.is_deleted = FALSE"];
 
   if (source) {
@@ -38,7 +38,7 @@ async function getArticles({ limit = 20, offset = 0, source, unreadOnly, session
       COUNT(*) OVER () AS total_count
     FROM articles a
     LEFT JOIN article_read_state rs
-      ON rs.article_id = a.id AND rs.session_id = $3
+      ON rs.article_id = a.id AND rs.user_id = $3
     WHERE ${where}
     ORDER BY a.published_at DESC
     LIMIT $1 OFFSET $2
@@ -56,31 +56,31 @@ async function getArticles({ limit = 20, offset = 0, source, unreadOnly, session
   return { articles, total };
 }
 
-async function markArticleRead({ articleId, sessionId, isRead }) {
+async function markArticleRead({ articleId, userId, isRead }) {
   const result = await pool.query(
     `
-    INSERT INTO article_read_state (article_id, session_id, is_read, read_at)
+    INSERT INTO article_read_state (article_id, user_id, is_read, read_at)
     VALUES ($1, $2, $3, NOW())
-    ON CONFLICT (article_id, session_id) DO UPDATE
+    ON CONFLICT (article_id, user_id) DO UPDATE
       SET is_read = $3, read_at = NOW()
     RETURNING id, article_id, is_read, read_at
     `,
-    [articleId, sessionId, isRead]
+    [articleId, userId, isRead]
   );
   return result.rows[0];
 }
 
-async function markAllRead({ sessionId, isRead = true }) {
+async function markAllRead({ userId, isRead = true }) {
   const result = await pool.query(
     `
-    INSERT INTO article_read_state (article_id, session_id, is_read, read_at)
+    INSERT INTO article_read_state (article_id, user_id, is_read, read_at)
     SELECT a.id, $1, $2, NOW()
     FROM articles a
     WHERE a.is_deleted = FALSE
-    ON CONFLICT (article_id, session_id) DO UPDATE
+    ON CONFLICT (article_id, user_id) DO UPDATE
       SET is_read = $2, read_at = NOW()
     `,
-    [sessionId, isRead]
+    [userId, isRead]
   );
   return result.rowCount;
 }
