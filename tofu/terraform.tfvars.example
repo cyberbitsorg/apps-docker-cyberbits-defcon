@@ -7,8 +7,12 @@
 #
 # BEFORE FIRST RUN
 #   1. Set DNS A record for defcon_domain → your server IP.
-#   2. Fill in the three REQUIRED fields below.
-#   3. tofu init && tofu plan && tofu apply
+#   2. Verify DNS resolves: dig +short defcon.example.com @1.1.1.1
+#   3. Fill in the required fields below.
+#   4. tofu init && tofu plan && tofu apply
+#
+# SENSITIVE
+#   Keep terraform.tfvars out of version control (.gitignore already covers it).
 #
 # =============================================================================
 
@@ -20,7 +24,7 @@
 docker_host = "ssh://deploy@your-server.example.com"
 remote_host = "deploy@your-server.example.com"
 
-# Local Docker socket (for local testing):
+# Local Docker socket (for local testing only):
 # docker_host = "unix:///var/run/docker.sock"
 # remote_host = ""
 
@@ -38,8 +42,11 @@ admin_email = "you@example.com"
 # TRAEFIK GATEWAY
 # =============================================================================
 
-# Set to false if Traefik is already running on this server.
-# The traefik_network must already exist (e.g. created by another stack).
+# Traefik already running on this server (e.g. from another OpenTofu stack):
+deploy_traefik = false
+# The traefik network must already exist on the server.
+
+# Fresh server — deploy Traefik as part of this stack:
 # deploy_traefik = true
 
 # Traefik image tag — update here to upgrade.
@@ -49,19 +56,41 @@ admin_email = "you@example.com"
 # traefik_dashboard_enabled = false
 
 # =============================================================================
+# TRAEFIK ROUTING
+# =============================================================================
+
+# Override individual routing settings (all have sensible defaults):
+# traefik_router = {
+#   enabled       = "true"
+#   tls           = "true"
+#   entrypoint    = "websecure"
+#   cert_resolver = "letsencrypt"
+#   middlewares   = "security-headers@file,rate-limit@file,compress@file"
+# }
+
+# =============================================================================
 # DEFCON DASHBOARD
 # =============================================================================
 
 # Public domain — must have a valid DNS A record before applying.
 defcon_domain = "defcon.example.com"
 
-# Login password for the dashboard (shown on the login screen).
+# Login password for the dashboard.
 defcon_admin_password = "change-me-strong-password"
 
 # How often to fetch new articles (minutes).
 # defcon_fetch_interval_minutes = 60
 
-# Memory limits (MiB) — tune for your VPS size.
+# =============================================================================
+# MEMORY LIMITS
+# =============================================================================
+
+# Tune for your VPS size (values in MiB):
+#
+#   1 GB VPS → postgres=256  redis=128  aggregator=256  api=128  frontend=64
+#   2 GB VPS → postgres=512  redis=256  aggregator=512  api=256  frontend=128  (defaults)
+#   4 GB VPS → postgres=512  redis=256  aggregator=512  api=256  frontend=128  (same, more headroom)
+#
 # defcon_postgres_memory_limit    = 512
 # defcon_redis_memory_limit       = 256
 # defcon_aggregator_memory_limit  = 512
