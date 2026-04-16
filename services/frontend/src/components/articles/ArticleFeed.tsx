@@ -57,8 +57,8 @@ export function ArticleFeed({ articles, loading, error, page, totalPages, onTogg
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-semibold tracking-widest uppercase text-gray-500">
+      <div className="flex items-center justify-between mb-3 min-w-0 gap-2">
+        <h2 className="text-xs font-semibold tracking-widest uppercase text-gray-500 truncate min-w-0">
           Latest Intelligence
           {unreadCount > 0 && (
             <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-500 dark:text-blue-400 text-[10px] font-bold">
