@@ -6,7 +6,8 @@ module.exports = function authenticate(req, res, next) {
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: "Unauthorized" });
   try {
-    jwt.verify(token, config.authSecret);
+    const payload = jwt.verify(token, config.authSecret);
+    req.userId = payload.sub || "admin";
     next();
   } catch {
     res.status(401).json({ error: "Invalid or expired token" });
