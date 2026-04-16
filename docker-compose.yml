@@ -46,8 +46,8 @@ services:
       DATABASE_URL: postgresql://defcon:${POSTGRES_PASSWORD}@postgres:5432/defcon_db
       REDIS_URL: redis://redis:6379
       API_GATEWAY_URL: http://api-gateway:4000
-      FETCH_INTERVAL_MINUTES: "60"
-      LOG_LEVEL: INFO
+      FETCH_INTERVAL_MINUTES: "${FETCH_INTERVAL_MINUTES:-60}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     depends_on:
