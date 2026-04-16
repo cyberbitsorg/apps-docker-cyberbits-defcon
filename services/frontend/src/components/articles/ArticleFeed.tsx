@@ -91,7 +91,7 @@ export function ArticleFeed({ articles, loading, error, page, totalPages, onTogg
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-1.5 mt-6">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 mt-6">
           {Array.from({ length: totalPages }).map((_, i) => {
             const p = i + 1;
             return (

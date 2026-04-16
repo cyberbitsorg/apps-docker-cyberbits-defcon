@@ -178,7 +178,7 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-600 mb-1">24h trend</p>
           <div style={{ height: 40 }} className="min-w-0 overflow-hidden">
-            <ResponsiveContainer width="100%" height={40}>
+            <ResponsiveContainer width="99%" height={40}>
               <LineChart data={history} margin={{ top: 4, bottom: 4, left: 0, right: 0 }}>
                 <Tooltip
                   contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 6, fontSize: 11 }}
