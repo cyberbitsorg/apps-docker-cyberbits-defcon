@@ -15,7 +15,7 @@ export function TopThreats({ articles }: TopThreatsProps) {
   if (top.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/40 p-4">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/40 p-4 overflow-hidden">
       <h3 className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-3">
         Top Threats
       </h3>

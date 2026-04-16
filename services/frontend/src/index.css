@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    overflow-x: hidden;
+  }
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 font-mono antialiased;
+    overflow-x: hidden;
   }
 }
 
