@@ -20,7 +20,7 @@ A self-hosted dashboard that aggregates cybersecurity news from RSS feeds, dedup
 
 <div align="center">
 
-![Architecture](docs/screenshots/architecture.png)
+![Architecture](docs/screenshots/arch.png)
 
 </div>
 
