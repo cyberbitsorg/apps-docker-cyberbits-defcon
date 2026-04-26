@@ -118,9 +118,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               onSeverityClick={handleSeverityClick}
             />
 
-            {/* Top threats */}
-            <TopThreats articles={articles} />
-
             {/* Source legend */}
             <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/40 p-4">
               <h3 className="text-xs font-semibold tracking-widest uppercase text-gray-500 mb-3">
@@ -145,7 +142,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                           : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                       }`}
                     >
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+                      <div
+                        className="w-2 h-2 rounded-full flex-shrink-0 transition-all"
+                        style={{
+                          backgroundColor: s.color,
+                          outline: isActive ? `2px solid ${s.color}` : undefined,
+                          outlineOffset: isActive ? "2px" : undefined,
+                        }}
+                      />
                       <span className={`text-xs ${isActive ? "text-gray-900 dark:text-gray-100 font-medium" : "text-gray-600 dark:text-gray-400"}`}>
                         {s.label}
                       </span>
@@ -164,6 +168,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               activeSource={activeFilters.source}
               onSourceClick={handleSourceClick}
             />
+
+            {/* Top threats */}
+            <TopThreats articles={articles} />
 
             {/* Trending keywords */}
             <TrendingKeywords articles={articles} />
