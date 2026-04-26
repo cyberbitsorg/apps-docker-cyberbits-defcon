@@ -3,6 +3,7 @@ export const SOURCE_COLORS: Record<string, string> = {
   help_net_security:     "#8b5cf6",  // violet
   infosecurity_magazine: "#f97316",  // orange
   security_affairs:      "#e11d48",  // rose
+  computer_weekly:       "#22c55e",  // green
 };
 
 export const SOURCE_LABELS: Record<string, string> = {
@@ -10,6 +11,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   help_net_security:     "HNS",
   infosecurity_magazine: "IM",
   security_affairs:      "SA",
+  computer_weekly:       "CW",
 };
 
 export const DEFCON_LEVELS = {

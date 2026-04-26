@@ -5,6 +5,7 @@ const SOURCE_DISPLAY = {
   help_net_security: "Help Net Security (HR)",
   infosecurity_magazine: "Infosecurity Magazine (UK)",
   security_affairs: "Security Affairs (IT)",
+  computer_weekly: "Computer Weekly (UK)",
 };
 
 async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId, minScore, maxScore }) {

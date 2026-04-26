@@ -8,10 +8,11 @@ interface SourceDistributionProps {
 }
 
 const SOURCES = [
-  { id: "the_register",          label: "The Register (UK)",          color: "#06b6d4" },
+  { id: "computer_weekly",       label: "Computer Weekly (UK)",       color: "#22c55e" },
   { id: "help_net_security",     label: "Help Net Security (HR)",     color: "#8b5cf6" },
   { id: "infosecurity_magazine", label: "Infosecurity Magazine (UK)", color: "#f97316" },
   { id: "security_affairs",      label: "Security Affairs (IT)",      color: "#e11d48" },
+  { id: "the_register",          label: "The Register (UK)",          color: "#06b6d4" },
 ];
 
 const SIZE = 64;
