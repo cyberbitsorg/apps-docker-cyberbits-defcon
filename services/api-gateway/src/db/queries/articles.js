@@ -7,13 +7,23 @@ const SOURCE_DISPLAY = {
   reuters: "Reuters",
 };
 
-async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId }) {
+async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId, minScore, maxScore }) {
   const params = [limit, offset, userId];
   const conditions = ["a.is_deleted = FALSE"];
 
   if (source) {
     params.push(source);
     conditions.push(`a.source = $${params.length}`);
+  }
+
+  if (minScore != null) {
+    params.push(minScore);
+    conditions.push(`a.defcon_score >= $${params.length}`);
+  }
+
+  if (maxScore != null) {
+    params.push(maxScore);
+    conditions.push(`a.defcon_score <= $${params.length}`);
   }
 
   if (unreadOnly) {
