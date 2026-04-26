@@ -1,7 +1,10 @@
 import { useMemo } from "react";
+import { cn } from "../../lib/utils";
 
 interface SourceDistributionProps {
   articles: { source: string }[];
+  activeSource: string | null;
+  onSourceClick: (id: string) => void;
 }
 
 const SOURCES = [
@@ -17,7 +20,7 @@ const STROKE = 8;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function SourceDistribution({ articles }: SourceDistributionProps) {
+export function SourceDistribution({ articles, activeSource, onSourceClick }: SourceDistributionProps) {
   const segments = useMemo(() => {
     const total = articles.length;
     if (total === 0) return [];
@@ -59,19 +62,46 @@ export function SourceDistribution({ articles }: SourceDistributionProps) {
               strokeWidth={STROKE}
               strokeDasharray={s!.dasharray}
               strokeDashoffset={s!.dashoffset}
+              className="cursor-pointer transition-opacity"
+              style={{
+                opacity: activeSource && activeSource !== s!.id ? 0.2 : 1,
+              }}
+              onClick={() => onSourceClick(s!.id)}
             />
           ))}
         </svg>
         <div className="flex flex-col gap-1 flex-1 min-w-0">
-          {segments.map((s) => (
-            <div key={s!.id} className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s!.color }} />
-              <span className="text-[11px] text-gray-600 dark:text-gray-400 truncate">{s!.label}</span>
-              <span className="ml-auto text-[11px] text-gray-400 dark:text-gray-600 flex-shrink-0">
-                {Math.round(s!.pct * 100)}%
-              </span>
-            </div>
-          ))}
+          {segments.map((s) => {
+            const isActive = activeSource === s!.id;
+            return (
+              <button
+                key={s!.id}
+                onClick={() => onSourceClick(s!.id)}
+                className={cn(
+                  "flex items-center gap-2 rounded px-1 py-0.5 -mx-1 text-left transition-colors cursor-pointer",
+                  isActive
+                    ? "bg-gray-100 dark:bg-gray-800"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                )}
+              >
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: s!.color }}
+                />
+                <span className={cn(
+                  "text-[11px] truncate",
+                  isActive
+                    ? "text-gray-900 dark:text-gray-100 font-medium"
+                    : "text-gray-600 dark:text-gray-400"
+                )}>
+                  {s!.label}
+                </span>
+                <span className="ml-auto text-[11px] text-gray-400 dark:text-gray-600 flex-shrink-0">
+                  {Math.round(s!.pct * 100)}%
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
