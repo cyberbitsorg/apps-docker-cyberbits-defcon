@@ -11,20 +11,20 @@ from cache.redis_client import get_redis, publish_cache_invalidation
 from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, JACCARD_THRESHOLD
 from pipeline.normalizer import normalize
 from pipeline.scorer import compute_global_score
-from feeds.bleeping_computer import BleepingComputerFeed
-from feeds.dark_reading import DarkReadingFeed
+from feeds.cybernews import CybernewsFeed
 from feeds.help_net_security import HelpNetSecurityFeed
-from feeds.security_week import SecurityWeekFeed
-from feeds.the_hacker_news import TheHackerNewsFeed
+from feeds.infosecurity_magazine import InfosecurityMagazineFeed
+from feeds.security_affairs import SecurityAffairsFeed
+from feeds.the_register import TheRegisterFeed
 
 logger = logging.getLogger(__name__)
 
 FEEDS = [
-    BleepingComputerFeed(),
-    DarkReadingFeed(),
+    TheRegisterFeed(),
     HelpNetSecurityFeed(),
-    SecurityWeekFeed(),
-    TheHackerNewsFeed(),
+    InfosecurityMagazineFeed(),
+    SecurityAffairsFeed(),
+    CybernewsFeed(),
 ]
 
 scheduler = AsyncIOScheduler()
