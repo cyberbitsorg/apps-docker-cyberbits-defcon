@@ -6,7 +6,20 @@ const POLL_INTERVAL = 5 * 60 * 1000;
 const TICK_INTERVAL = 60 * 1000;
 const PAGE_SIZE = 20;
 
-export function useArticles() {
+const SEVERITY_RANGES: Record<string, { min: number; max: number }> = {
+  Critical: { min: 80, max: 100 },
+  High:     { min: 60, max: 79 },
+  Elevated: { min: 40, max: 59 },
+  Guarded:  { min: 20, max: 39 },
+  Low:      { min: 1,  max: 19 },
+};
+
+export interface ArticleFilters {
+  severity: string | null;
+  source: string | null;
+}
+
+export function useArticles(filters: ArticleFilters = { severity: null, source: null }) {
   const [data, setData] = useState<ArticlesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,10 +30,13 @@ export function useArticles() {
 
   const fetchArticles = useCallback(async (resetTimer?: boolean, targetPage?: number) => {
     const currentPage = targetPage ?? page;
+    const severityRange = filters.severity ? SEVERITY_RANGES[filters.severity] : null;
     try {
       const result = await getArticles({
         limit: PAGE_SIZE,
         offset: (currentPage - 1) * PAGE_SIZE,
+        ...(filters.source ? { source: filters.source } : {}),
+        ...(severityRange ? { min_score: severityRange.min, max_score: severityRange.max } : {}),
       });
       if (resetTimer) {
         result.last_refreshed_at = new Date().toISOString();
@@ -32,9 +48,15 @@ export function useArticles() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, filters.severity, filters.source]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters.severity, filters.source]);
 
   useEffect(() => {
+    setLoading(true);
     fetchArticles();
     intervalRef.current = setInterval(fetchArticles, POLL_INTERVAL);
     tickRef.current = setInterval(() => setTick((n) => n + 1), TICK_INTERVAL);
@@ -51,7 +73,6 @@ export function useArticles() {
   }, [fetchArticles]);
 
   const toggleRead = useCallback(async (id: string, isRead: boolean) => {
-    // Optimistic update
     setData((prev) => {
       if (!prev) return prev;
       return {
@@ -65,7 +86,6 @@ export function useArticles() {
     try {
       await markArticleRead(id, isRead);
     } catch {
-      // Revert on failure
       setData((prev) => {
         if (!prev) return prev;
         return {
