@@ -172,13 +172,13 @@ tofu destroy
 
 ## News sources
 
-| Source | Feed URL |
-|---|---|
-| Bleeping Computer | `https://www.bleepingcomputer.com/feed/` |
-| Dark Reading | `https://www.darkreading.com/rss.xml` |
-| Help Net Security | `https://www.helpnetsecurity.com/feed/` |
-| Security Week | `https://feeds.feedburner.com/Securityweek` |
-| The Hacker News | `https://feeds.feedburner.com/TheHackersNews` |
+| Source | Country | Feed |
+|---|---|---|
+| Computer Weekly | UK | RSS `https://www.computerweekly.com/rss/IT-security.xml` |
+| Help Net Security | HR | RSS `https://www.helpnetsecurity.com/feed/` |
+| Infosecurity Magazine | UK | RSS `https://www.infosecurity-magazine.com/rss/news/` |
+| Security Affairs | IT | WordPress API `https://securityaffairs.com/wp-json/wp/v2/posts` |
+| The Register | UK | Atom `https://www.theregister.com/security/headlines.atom` |
 
 ## Data pipeline
 
