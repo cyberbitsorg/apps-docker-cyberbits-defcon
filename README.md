@@ -270,3 +270,7 @@ Session-based read state is managed via the `X-Session-ID` header (auto-generate
 | `ADMIN_PASSWORD` | API Gateway | Dashboard login password |
 | `FETCH_INTERVAL_MINUTES` | Aggregator | Scheduler interval in minutes (default: `60`) |
 | `LOG_LEVEL` | Aggregator | Python logging level (default: `INFO`) |
+
+## License
+
+MIT License. Free to use. No warranties.
