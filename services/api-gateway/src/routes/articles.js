@@ -12,8 +12,9 @@ router.get("/", async (req, res, next) => {
     const userId = req.userId;
     const minScore = req.query.min_score != null && req.query.min_score !== "" ? parseFloat(req.query.min_score) : null;
     const maxScore = req.query.max_score != null && req.query.max_score !== "" ? parseFloat(req.query.max_score) : null;
+    const search = req.query.search?.trim() || null;
 
-    const { articles, total } = await getArticles({ limit, offset, source, unreadOnly, userId, minScore, maxScore });
+    const { articles, total } = await getArticles({ limit, offset, source, unreadOnly, userId, minScore, maxScore, search });
     const lastRefreshedAt = await getLastRefreshedAt();
 
     res.json({ articles, total, last_refreshed_at: lastRefreshedAt });

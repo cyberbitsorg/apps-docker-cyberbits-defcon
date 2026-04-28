@@ -36,9 +36,10 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const { status: defconStatus, history: defconHistory, loading: defconLoading } = useDefcon();
   const [refreshing, setRefreshing] = useState(false);
 
-  const [activeFilters, setActiveFilters] = useState<{ severity: string | null; source: string | null }>({
+  const [activeFilters, setActiveFilters] = useState<{ severity: string | null; source: string | null; search: string | null }>({
     severity: null,
     source: null,
+    search: null,
   });
 
   const handleSeverityClick = (label: string) => {
@@ -49,8 +50,12 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     setActiveFilters((f) => ({ ...f, source: f.source === id ? null : id }));
   };
 
-  const handleClearFilter = (key: "severity" | "source") => {
+  const handleClearFilter = (key: "severity" | "source" | "search") => {
     setActiveFilters((f) => ({ ...f, [key]: null }));
+  };
+
+  const handleSearchChange = (value: string) => {
+    setActiveFilters((f) => ({ ...f, search: value || null }));
   };
 
   const { articles, lastRefreshed, loading, error, refresh, toggleRead, markAll, page, totalPages, goToPage } = useArticles(activeFilters);
@@ -192,6 +197,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               onGoToPage={goToPage}
               activeFilters={activeFilters}
               onClearFilter={handleClearFilter}
+              onSearchChange={handleSearchChange}
             />
           </section>
         </div>

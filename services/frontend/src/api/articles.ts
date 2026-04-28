@@ -8,6 +8,7 @@ export function getArticles(params?: {
   unread_only?: boolean;
   min_score?: number;
   max_score?: number;
+  search?: string;
 }): Promise<ArticlesResponse> {
   const query = new URLSearchParams();
   if (params?.limit) query.set("limit", String(params.limit));
@@ -16,6 +17,7 @@ export function getArticles(params?: {
   if (params?.unread_only) query.set("unread_only", "true");
   if (params?.min_score != null) query.set("min_score", String(params.min_score));
   if (params?.max_score != null) query.set("max_score", String(params.max_score));
+  if (params?.search) query.set("search", params.search);
   const qs = query.toString() ? `?${query}` : "";
   return apiFetch(`/articles${qs}`);
 }

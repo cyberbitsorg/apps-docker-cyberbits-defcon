@@ -17,16 +17,23 @@ const SEVERITY_RANGES: Record<string, { min: number; max: number }> = {
 export interface ArticleFilters {
   severity: string | null;
   source: string | null;
+  search: string | null;
 }
 
-export function useArticles(filters: ArticleFilters = { severity: null, source: null }) {
+export function useArticles(filters: ArticleFilters = { severity: null, source: null, search: null }) {
   const [data, setData] = useState<ArticlesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [page, setPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const tickRef = useRef<ReturnType<typeof setInterval>>();
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(filters.search), 400);
+    return () => clearTimeout(t);
+  }, [filters.search]);
 
   const fetchArticles = useCallback(async (resetTimer?: boolean, targetPage?: number) => {
     const currentPage = targetPage ?? page;
@@ -37,6 +44,7 @@ export function useArticles(filters: ArticleFilters = { severity: null, source: 
         offset: (currentPage - 1) * PAGE_SIZE,
         ...(filters.source ? { source: filters.source } : {}),
         ...(severityRange ? { min_score: severityRange.min, max_score: severityRange.max } : {}),
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       });
       if (resetTimer) {
         result.last_refreshed_at = new Date().toISOString();
@@ -48,12 +56,12 @@ export function useArticles(filters: ArticleFilters = { severity: null, source: 
     } finally {
       setLoading(false);
     }
-  }, [page, filters.severity, filters.source]);
+  }, [page, filters.severity, filters.source, debouncedSearch]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [filters.severity, filters.source]);
+  }, [filters.severity, filters.source, debouncedSearch]);
 
   useEffect(() => {
     setLoading(true);

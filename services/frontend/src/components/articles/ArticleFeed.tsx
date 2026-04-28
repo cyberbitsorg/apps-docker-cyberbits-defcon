@@ -1,4 +1,4 @@
-import { CheckCheck, Newspaper, RotateCcw, X } from "lucide-react";
+import { CheckCheck, Newspaper, RotateCcw, Search, X } from "lucide-react";
 import { ArticleCard } from "./ArticleCard";
 import type { Article } from "../../types/article";
 import type { ArticleFilters } from "../../hooks/useArticles";
@@ -22,6 +22,7 @@ interface ArticleFeedProps {
   onGoToPage: (page: number) => void;
   activeFilters: ArticleFilters;
   onClearFilter: (key: keyof ArticleFilters) => void;
+  onSearchChange: (value: string) => void;
 }
 
 function FilterChips({ activeFilters, onClearFilter }: { activeFilters: ArticleFilters; onClearFilter: (key: keyof ArticleFilters) => void }) {
@@ -43,14 +44,22 @@ function FilterChips({ activeFilters, onClearFilter }: { activeFilters: ArticleF
           </button>
         </span>
       )}
+      {activeFilters.search && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-300">
+          &ldquo;{activeFilters.search}&rdquo;
+          <button onClick={() => onClearFilter("search")} className="ml-0.5 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      )}
     </>
   );
 }
 
-export function ArticleFeed({ articles, loading, error, page, totalPages, onToggleRead, onMarkAll, onGoToPage, activeFilters, onClearFilter }: ArticleFeedProps) {
+export function ArticleFeed({ articles, loading, error, page, totalPages, onToggleRead, onMarkAll, onGoToPage, activeFilters, onClearFilter, onSearchChange }: ArticleFeedProps) {
   const unreadCount = articles.filter((a) => !a.is_read).length;
   const allRead = articles.length > 0 && unreadCount === 0;
-  const hasActiveFilter = !!(activeFilters.severity || activeFilters.source);
+  const hasActiveFilter = !!(activeFilters.severity || activeFilters.source || activeFilters.search);
 
   if (loading) {
     return (
@@ -89,9 +98,21 @@ export function ArticleFeed({ articles, loading, error, page, totalPages, onTogg
           </h2>
           <FilterChips activeFilters={activeFilters} onClearFilter={onClearFilter} />
         </div>
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <input
+            type="search"
+            placeholder="Search articles…"
+            value={activeFilters.search ?? ""}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/40 p-10 text-center">
           <Newspaper className="w-8 h-8 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
-          {hasActiveFilter ? (
+          {activeFilters.search ? (
+            <p className="text-gray-500 text-sm">No articles found for &ldquo;{activeFilters.search}&rdquo;.</p>
+          ) : hasActiveFilter ? (
             <p className="text-gray-500 text-sm">No articles found for the selected filters.</p>
           ) : (
             <>
@@ -134,6 +155,17 @@ export function ArticleFeed({ articles, loading, error, page, totalPages, onTogg
             </>
           )}
         </button>
+      </div>
+
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        <input
+          type="search"
+          placeholder="Search articles…"
+          value={activeFilters.search ?? ""}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">

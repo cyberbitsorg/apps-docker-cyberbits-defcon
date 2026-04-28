@@ -8,7 +8,7 @@ const SOURCE_DISPLAY = {
   computer_weekly: "Computer Weekly (UK)",
 };
 
-async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId, minScore, maxScore }) {
+async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId, minScore, maxScore, search }) {
   const params = [limit, offset, userId];
   const conditions = ["a.is_deleted = FALSE"];
 
@@ -29,6 +29,11 @@ async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId,
 
   if (unreadOnly) {
     conditions.push(`(rs.is_read IS NULL OR rs.is_read = FALSE)`);
+  }
+
+  if (search) {
+    params.push(`%${search}%`);
+    conditions.push(`(a.title ILIKE $${params.length} OR a.summary ILIKE $${params.length})`);
   }
 
   const where = conditions.join(" AND ");
