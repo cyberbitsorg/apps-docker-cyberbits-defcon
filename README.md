@@ -1,4 +1,4 @@
-# Cybersecurity DEFCON dashboard
+# Cyberbits DEFCON dashboard
 
 A self-hosted dashboard that aggregates cybersecurity news from RSS feeds, deduplicates articles, scores them on a DEFCON-style threat scale (1–5), and presents everything through a real-time web interface.
 
@@ -20,7 +20,7 @@ A self-hosted dashboard that aggregates cybersecurity news from RSS feeds, dedup
 
 <div align="center">
 
-![Architecture](docs/screenshots/arch.png)
+![Architecture](docs/screenshots/architecture.png)
 
 </div>
 
