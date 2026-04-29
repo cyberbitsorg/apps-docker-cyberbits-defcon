@@ -5,6 +5,7 @@ const config = require("./config");
 const sessionIdMiddleware = require("./middleware/sessionId");
 const authenticate = require("./middleware/authenticate");
 const errorHandler = require("./middleware/errorHandler");
+const { loginLimiter } = require("./middleware/rateLimiter");
 
 const authRouter = require("./routes/auth");
 const articlesRouter = require("./routes/articles");
@@ -28,7 +29,7 @@ app.use(express.json());
 app.use(sessionIdMiddleware);
 
 // Public routes
-app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/auth", loginLimiter, authRouter);
 app.use("/api/v1/health", healthRouter);
 app.use("/internal", internalRouter);
 

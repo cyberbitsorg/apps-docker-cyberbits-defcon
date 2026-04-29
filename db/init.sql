@@ -10,7 +10,7 @@ CREATE TABLE articles (
     title           TEXT NOT NULL,
     summary         TEXT,
     url             TEXT NOT NULL,
-    source          TEXT NOT NULL CHECK (source IN ('the_register', 'help_net_security', 'infosecurity_magazine', 'security_affairs', 'computer_weekly')),
+    source          TEXT NOT NULL CHECK (source IN ('hackread', 'infosecurity_magazine', 'security_affairs', 'techradar_security', 'the_register')),
     published_at    TIMESTAMPTZ NOT NULL,
     fetched_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     raw_categories  TEXT[],

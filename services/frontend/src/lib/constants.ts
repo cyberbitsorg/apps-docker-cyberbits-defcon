@@ -1,17 +1,17 @@
 export const SOURCE_COLORS: Record<string, string> = {
-  the_register:          "#06b6d4",  // cyan
-  help_net_security:     "#8b5cf6",  // violet
+  hackread:              "#ec4899",  // pink
   infosecurity_magazine: "#f97316",  // orange
   security_affairs:      "#e11d48",  // rose
-  computer_weekly:       "#22c55e",  // green
+  techradar_security:    "#8b5cf6",  // violet
+  the_register:          "#06b6d4",  // cyan
 };
 
 export const SOURCE_LABELS: Record<string, string> = {
-  the_register:          "TR",
-  help_net_security:     "HNS",
+  hackread:              "HR",
   infosecurity_magazine: "IM",
   security_affairs:      "SA",
-  computer_weekly:       "CW",
+  techradar_security:    "TRS",
+  the_register:          "TR",
 };
 
 export const DEFCON_LEVELS = {

@@ -1,11 +1,11 @@
 const pool = require("../pool");
 
 const SOURCE_DISPLAY = {
-  the_register: "The Register (UK)",
-  help_net_security: "Help Net Security (HR)",
-  infosecurity_magazine: "Infosecurity Magazine (UK)",
-  security_affairs: "Security Affairs (IT)",
-  computer_weekly: "Computer Weekly (UK)",
+  hackread:              "HackRead",
+  infosecurity_magazine: "Infosecurity Magazine",
+  security_affairs:      "Security Affairs",
+  techradar_security:    "TechRadar Security",
+  the_register:          "The Register",
 };
 
 async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId, minScore, maxScore, search }) {

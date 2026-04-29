@@ -4,11 +4,11 @@ import type { Article } from "../../types/article";
 import type { ArticleFilters } from "../../hooks/useArticles";
 
 const SOURCE_LABELS: Record<string, string> = {
-  bleeping_computer: "Bleeping Computer",
-  dark_reading:      "Dark Reading",
-  help_net_security: "Help Net Security",
-  security_week:     "Security Week",
-  the_hacker_news:   "The Hacker News",
+  hackread:              "HackRead",
+  infosecurity_magazine: "Infosecurity Magazine",
+  security_affairs:      "Security Affairs",
+  techradar_security:    "TechRadar Security",
+  the_register:          "The Register",
 };
 
 interface ArticleFeedProps {

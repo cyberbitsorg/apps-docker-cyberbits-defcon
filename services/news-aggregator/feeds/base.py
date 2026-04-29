@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from abc import ABC, abstractmethod
@@ -50,17 +51,28 @@ class RssFeedParser(BaseFeedParser):
             raise TypeError(f"{cls.__name__} must define class attribute source_id")
 
     async def fetch(self) -> list[RawArticle]:
-        try:
-            async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
-                response = await client.get(
-                    self.feed_url,
-                    headers={"User-Agent": _BROWSER_UA},
-                )
-                response.raise_for_status()
-                content = response.text
-        except Exception as e:
-            logger.error(f"[{self.source_id}] Failed to fetch feed: {e}")
-            return []
+        delays = [5, 15, 45]
+        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+            for attempt, delay in enumerate(delays + [None], start=1):
+                try:
+                    response = await client.get(
+                        self.feed_url,
+                        headers={"User-Agent": _BROWSER_UA},
+                    )
+                    if response.status_code == 429:
+                        if delay is None:
+                            logger.error(f"[{self.source_id}] Still 429 after {len(delays)} retries, giving up")
+                            return []
+                        retry_after = int(response.headers.get("Retry-After", delay))
+                        logger.warning(f"[{self.source_id}] 429 on attempt {attempt}, retrying in {retry_after}s")
+                        await asyncio.sleep(retry_after)
+                        continue
+                    response.raise_for_status()
+                    content = response.text
+                    break
+                except Exception as e:
+                    logger.error(f"[{self.source_id}] Failed to fetch feed: {e}")
+                    return []
 
         feed = feedparser.parse(content)
         articles = []
