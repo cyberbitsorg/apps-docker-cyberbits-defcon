@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from db.connection import get_pool
 from cache.redis_client import get_redis
 
@@ -7,21 +8,18 @@ router = APIRouter()
 
 @router.get("/health")
 async def health():
-    status = {"status": "ok", "database": "unknown", "redis": "unknown"}
+    ok = True
     try:
         pool = await get_pool()
         await pool.fetchval("SELECT 1")
-        status["database"] = "ok"
     except Exception:
-        status["database"] = "error"
-        status["status"] = "degraded"
-
+        ok = False
     try:
         r = await get_redis()
         await r.ping()
-        status["redis"] = "ok"
     except Exception:
-        status["redis"] = "error"
-        status["status"] = "degraded"
-
-    return status
+        ok = False
+    return JSONResponse(
+        {"status": "ok" if ok else "degraded"},
+        status_code=200 if ok else 503,
+    )
