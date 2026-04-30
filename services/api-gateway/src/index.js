@@ -23,7 +23,7 @@ app.use(helmet());
 app.use(cors({
   origin: config.corsOrigin,
   methods: ["GET", "POST", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Session-ID"],
 }));
 app.use(express.json());
 
