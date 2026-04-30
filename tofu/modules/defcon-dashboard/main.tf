@@ -227,11 +227,6 @@ resource "docker_container" "news_aggregator" {
     aliases = ["news-aggregator"]
   }
 
-  networks_advanced {
-    name    = var.traefik_network
-    aliases = ["news-aggregator"]
-  }
-
   healthcheck {
     test         = ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
     interval     = "30s"
