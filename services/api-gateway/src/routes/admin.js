@@ -6,7 +6,10 @@ const router = Router();
 
 router.post("/refresh", adminLimiter, async (req, res, next) => {
   try {
-    const response = await fetch(`${config.aggregatorUrl}/trigger`, { method: "POST" });
+    const response = await fetch(`${config.aggregatorUrl}/trigger`, {
+      method: "POST",
+      headers: { "X-Internal-Token": config.internalSecret },
+    });
     if (!response.ok) {
       return res.status(502).json({ error: "Aggregator did not accept trigger" });
     }
