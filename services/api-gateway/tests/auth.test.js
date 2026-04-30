@@ -1,7 +1,6 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 
-// timingSafeCompare is not yet exported — this will be undefined and all tests will fail
 const { timingSafeCompare } = require("../src/routes/auth");
 
 test("equal strings return true", () => {
