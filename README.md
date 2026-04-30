@@ -174,10 +174,10 @@ tofu destroy
 
 | Source | Country | Feed |
 |---|---|---|
-| Computer Weekly | UK | RSS `https://www.computerweekly.com/rss/IT-security.xml` |
-| Help Net Security | HR | RSS `https://www.helpnetsecurity.com/feed/` |
+| HackRead | PK | RSS `https://hackread.com/feed/` |
 | Infosecurity Magazine | UK | RSS `https://www.infosecurity-magazine.com/rss/news/` |
 | Security Affairs | IT | WordPress API `https://securityaffairs.com/wp-json/wp/v2/posts` |
+| TechRadar Security | UK | RSS `https://www.techradar.com/feeds/tag/security` |
 | The Register | UK | Atom `https://www.theregister.com/security/headlines.atom` |
 
 ## Data pipeline
@@ -218,7 +218,7 @@ The global DEFCON level is computed from the same dimensions across the recent a
 
 ### 4. Store
 
-Articles are upserted into PostgreSQL. Old articles are trimmed to keep 200 total / 15 per source.
+Articles are upserted into PostgreSQL. Old articles are trimmed to keep 100 total / 15 per source.
 
 ## API endpoints
 
