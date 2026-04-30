@@ -343,7 +343,7 @@ resource "docker_container" "frontend" {
   }
   labels {
     label = "traefik.http.services.${local.router_name}.loadbalancer.server.port"
-    value = "80"
+    value = "8080"
   }
 
   networks_advanced {

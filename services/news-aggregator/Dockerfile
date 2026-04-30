@@ -2,17 +2,20 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies for lxml
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libxml2-dev \
     libxslt-dev \
     && rm -rf /var/lib/apt/lists/*
 
+RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY --chown=appuser:appuser . .
+
+USER appuser
 
 EXPOSE 8000
 
