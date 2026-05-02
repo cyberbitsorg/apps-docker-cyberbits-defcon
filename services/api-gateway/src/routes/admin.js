@@ -9,6 +9,7 @@ router.post("/refresh", adminLimiter, async (req, res, next) => {
     const response = await fetch(`${config.aggregatorUrl}/trigger`, {
       method: "POST",
       headers: { "X-Internal-Token": config.internalSecret },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
       return res.status(502).json({ error: "Aggregator did not accept trigger" });

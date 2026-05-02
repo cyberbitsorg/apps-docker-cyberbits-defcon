@@ -10,7 +10,7 @@ module.exports = {
   databaseUrl: required("DATABASE_URL"),
   redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
   aggregatorUrl: process.env.AGGREGATOR_URL || "http://news-aggregator:8000",
-  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  corsOrigin: required("CORS_ORIGIN"),
   authSecret: required("AUTH_SECRET"),
   adminPassword: required("ADMIN_PASSWORD"),
   internalSecret: required("INTERNAL_SECRET"),

@@ -14,7 +14,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/history", async (req, res, next) => {
   try {
-    const hours = Math.min(parseInt(req.query.hours) || 24, 168);
+    const hours = Math.max(1, Math.min(parseInt(req.query.hours) || 24, 168));
     const history = await getDefconHistory(hours);
     res.json({ history });
   } catch (err) {
