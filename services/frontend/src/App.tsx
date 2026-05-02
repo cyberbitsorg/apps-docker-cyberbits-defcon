@@ -130,11 +130,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               </h3>
               <div className="flex flex-col gap-2">
                 {[
-                  { id: "hackread",              label: "HackRead",              color: "#ec4899" },
-                  { id: "infosecurity_magazine", label: "Infosecurity Magazine", color: "#f97316" },
-                  { id: "security_affairs",      label: "Security Affairs",      color: "#e11d48" },
-                  { id: "techradar_security",    label: "TechRadar Security",    color: "#8b5cf6" },
-                  { id: "the_register",          label: "The Register",          color: "#06b6d4" },
+                  { id: "bleeping_computer", label: "Bleeping Computer", color: "#f97316" },
+                  { id: "hacker_news",       label: "Hacker News",       color: "#8b5cf6" },
+                  { id: "hackread",          label: "HackRead",          color: "#ec4899" },
+                  { id: "security_affairs",  label: "Security Affairs",  color: "#e11d48" },
+                  { id: "the_register",      label: "The Register",      color: "#06b6d4" },
                 ].map((s) => {
                   const isActive = activeFilters.source === s.id;
                   return (
