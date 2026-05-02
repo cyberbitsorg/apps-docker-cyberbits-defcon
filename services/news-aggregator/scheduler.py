@@ -11,19 +11,19 @@ from cache.redis_client import get_redis, publish_cache_invalidation
 from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, JACCARD_THRESHOLD
 from pipeline.normalizer import normalize
 from pipeline.scorer import compute_global_score
+from feeds.bleeping_computer import BleepingComputerFeed
+from feeds.hacker_news import HackerNewsFeed
 from feeds.hackread import HackReadFeed
-from feeds.infosecurity_magazine import InfosecurityMagazineFeed
 from feeds.security_affairs import SecurityAffairsFeed
-from feeds.techradar_security import TechRadarSecurityFeed
 from feeds.the_register import TheRegisterFeed
 
 logger = logging.getLogger(__name__)
 
 FEEDS = [
+    BleepingComputerFeed(),
+    HackerNewsFeed(),
     HackReadFeed(),
-    InfosecurityMagazineFeed(),
     SecurityAffairsFeed(),
-    TechRadarSecurityFeed(),
     TheRegisterFeed(),
 ]
 
