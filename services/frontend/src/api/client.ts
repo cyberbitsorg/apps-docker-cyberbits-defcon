@@ -1,4 +1,3 @@
-import { getSessionId } from "../store/session";
 import { getToken, clearToken } from "../store/auth";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
@@ -9,7 +8,6 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "X-Session-ID": getSessionId(),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },

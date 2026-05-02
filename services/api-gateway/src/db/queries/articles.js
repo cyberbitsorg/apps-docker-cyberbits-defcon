@@ -32,7 +32,8 @@ async function getArticles({ limit = 20, offset = 0, source, unreadOnly, userId,
   }
 
   if (search) {
-    params.push(`%${search}%`);
+    const escaped = search.replace(/[%_\\]/g, "\\$&");
+    params.push(`%${escaped}%`);
     conditions.push(`(a.title ILIKE $${params.length} OR a.summary ILIKE $${params.length})`);
   }
 

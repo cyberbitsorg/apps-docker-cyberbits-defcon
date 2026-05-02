@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     fetch_interval_minutes: int = 60
     log_level: str = "INFO"
+    internal_secret: str = ""
 
     class Config:
         env_file = ".env"

@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const config = require("./config");
-const sessionIdMiddleware = require("./middleware/sessionId");
 const authenticate = require("./middleware/authenticate");
 const errorHandler = require("./middleware/errorHandler");
 const { loginLimiter } = require("./middleware/rateLimiter");
@@ -23,12 +22,12 @@ app.use(helmet());
 app.use(cors({
   origin: config.corsOrigin,
   methods: ["GET", "POST", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Session-ID"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use(express.json());
 
 // Public routes
-app.use("/api/v1/auth", sessionIdMiddleware, loginLimiter, authRouter);
+app.use("/api/v1/auth", loginLimiter, authRouter);
 app.use("/api/v1/health", healthRouter);
 app.use("/internal", internalRouter);
 

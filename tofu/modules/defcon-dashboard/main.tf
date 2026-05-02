@@ -194,7 +194,7 @@ resource "docker_container" "redis" {
   }
 
   healthcheck {
-    test         = ["CMD-SHELL", "redis-cli -a '${random_password.redis.result}' ping"]
+    test         = ["CMD-SHELL", "REDISCLI_AUTH='${random_password.redis.result}' redis-cli ping"]
     interval     = "10s"
     timeout      = "3s"
     retries      = 5

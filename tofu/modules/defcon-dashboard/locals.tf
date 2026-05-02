@@ -14,8 +14,10 @@ locals {
 
   env_content = templatefile("${path.module}/templates/defcon.env.tftpl", {
     postgres_password = random_password.postgres.result
+    redis_password    = random_password.redis.result
     auth_secret       = random_password.auth_secret.result
     admin_password    = var.admin_password
+    internal_secret   = random_password.internal_secret.result
     domain            = var.domain
   })
 
