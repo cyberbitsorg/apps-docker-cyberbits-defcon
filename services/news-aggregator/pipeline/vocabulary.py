@@ -2,7 +2,7 @@
 Threat vocabulary for DEFCON scoring.
 
 TIER1/2/3 = keyword lists weighted at 8/4/1 points each in Track B keyword scoring.
-THREAT_ACTORS = named groups, included in TIER2 by membership.
+THREAT_ACTORS = named groups used by triggers.py for named-actor detection.
 CRITICAL_SECTORS = regex-safe sector names used by impact + breach trigger.
 WB_REQUIRED = short tokens that need word-boundary matching to avoid false positives.
 """

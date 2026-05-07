@@ -44,19 +44,19 @@ class TriggerMatch:
 _ACTIVE_EXPLOITATION_PATTERNS = [
     r"\bactively exploited\b",
     r"\bactive exploitation\b",
-    r"\bexploited(?! vulnerabilities)\b",  # match "exploited" but not when followed by "vulnerabilities"
+    r"\bexploited(?! vulnerabilit)\b",  # match "exploited" but not when followed by "vulnerabilit" (covers singular and plural)
     r"\bexploited in (the wild|attacks|the open)\b",
     r"\bin[- ]the[- ]wild\b",
     r"\bunder (active )?attack\b",
     r"\bunder exploitation\b",
     r"\b(zero[- ]day|0[- ]day) exploited\b",
-    r"\bkev catalog\b",
 ]
 
 _KEV_PATTERNS = [
     # CISA + (KEV or "known exploited") + (adds/added)
     r"\bcisa\b.{0,50}\b(kev|known exploited)\b.{0,50}\b(adds?|added)\b",
     r"\bcisa\b.{0,50}\b(adds?|added)\b.{0,50}\b(kev|known exploited)\b",
+    r"\bkev catalog\b",
 ]
 
 _BREACH_VERB = re.compile(

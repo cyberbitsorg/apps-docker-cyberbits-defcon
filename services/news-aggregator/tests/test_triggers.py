@@ -23,6 +23,10 @@ def test_kev_addition():
     assert detect_trigger("cisa adds new vuln to known exploited vulnerabilities catalog").trigger == "kev_addition"
 
 
+def test_kev_catalog_fires_kev_addition():
+    assert detect_trigger("microsoft adds cve to kev catalog").trigger == "kev_addition"
+
+
 def test_confirmed_breach_with_millions():
     assert detect_trigger("shinyhunters breached vimeo affecting millions of users").trigger == "confirmed_breach"
 
@@ -62,7 +66,7 @@ def test_precedence_active_over_breach():
     assert detect_trigger(text).trigger == "active_exploitation"
 
 
-def test_precedence_kev_over_breach():
+def test_precedence_active_over_kev_and_breach():
     text = "cisa adds known exploited bug; vendor confirms breach affecting millions"
     assert detect_trigger(text).trigger == "active_exploitation"  # exploited matches active first
 
