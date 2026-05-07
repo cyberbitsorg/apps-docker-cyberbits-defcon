@@ -70,3 +70,71 @@ def test_keyword_caps_at_25():
     # extremely keyword-dense text should still cap at 25
     text = "zero-day nation-state ransomware attack critical infrastructure rce ddos backdoor exploit malware breach cve"
     assert _extract_keyword_score_normalized(text) <= 25.0
+
+
+from pipeline.scoring_v2 import compute_article_score_v2, ArticleScore
+
+
+def test_article_v2_palo_alto_zero_day():
+    score = compute_article_score_v2(
+        "Palo Alto firewall RCE zero-day exploited in attacks",
+        "vendor confirms active exploitation in the wild against PAN-OS",
+    )
+    assert score.score >= 85
+    assert score.trigger == "active_exploitation"
+
+
+def test_article_v2_breach_with_scale():
+    score = compute_article_score_v2(
+        "Hospital patient records breach confirmed",
+        "vendor confirms breach affecting hospital systems with millions of records exposed",
+    )
+    assert score.score >= 80
+    assert score.trigger == "confirmed_breach"
+
+
+def test_article_v2_routine_patch_track_b_only():
+    score = compute_article_score_v2(
+        "Microsoft patches medium severity CVE-2024-1234",
+        "monthly update fixes vulnerability with cvss 5.0",
+    )
+    assert score.score < 40
+    assert score.trigger is None
+
+
+def test_article_v2_track_b_capped_at_75():
+    # very keyword-heavy article with no Track A trigger should still cap at 75
+    score = compute_article_score_v2(
+        "keyword dense text without trigger",
+        "rce ddos backdoor exploit malware breach cve trojan spyware data leak threat actor unauthorized access credential dumped database vendor advisory incident response",
+    )
+    # Track A "active_exploitation" did NOT fire here (no exploited/wild text), so Track B path
+    # If trigger fires (e.g., zero-day exploited variant), allow >75
+    if score.trigger is None:
+        assert score.score <= 75
+    else:
+        assert score.score >= 75
+
+
+def test_article_v2_empty_returns_zero():
+    score = compute_article_score_v2("", "")
+    assert score.score == 0.0
+    assert score.trigger is None
+
+
+def test_article_v2_track_a_with_track_b_bonus():
+    # Active exploitation + critical sector + millions → Track A base + bonus
+    score = compute_article_score_v2(
+        "Hospital systems actively exploited via zero-day",
+        "millions of patient records affected; cvss 9.8 critical infrastructure under active attack",
+    )
+    assert score.score >= 95
+    assert score.trigger == "active_exploitation"
+
+
+def test_article_v2_returns_dataclass_with_fields():
+    s = compute_article_score_v2("routine patch", "minor")
+    assert hasattr(s, "score")
+    assert hasattr(s, "trigger")
+    assert hasattr(s, "track_a")
+    assert hasattr(s, "track_b")

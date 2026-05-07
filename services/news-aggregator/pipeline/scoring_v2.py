@@ -104,3 +104,50 @@ def _extract_keyword_score_normalized(text: str) -> float:
     # cap density at ~3.0 (calibrated so dense critical articles reach 25)
     DENSITY_CAP = 3.0
     return min(density / DENSITY_CAP, 1.0) * 25.0
+
+
+@dataclass(frozen=True)
+class ArticleScore:
+    score: float
+    trigger: Optional[TriggerType]
+    track_a: float  # Track A score (0 if no trigger)
+    track_b: float  # Track B final (capped at 75)
+
+
+def _compute_track_b_unclamped(text: str) -> tuple[float, float, float]:
+    """Return (cve, impact, keywords) dimension scores — pre-cap."""
+    cve_raw     = _extract_cvss_v2(text)
+    cve_score   = (cve_raw / 10.0) * 30.0
+    impact_score = _extract_impact_score_v2(text)
+    keyword_score = _extract_keyword_score_normalized(text)
+    return cve_score, impact_score, keyword_score
+
+
+def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
+    text = f"{title} {summary}".lower()
+    if not text.strip():
+        return ArticleScore(score=0.0, trigger=None, track_a=0.0, track_b=0.0)
+
+    cve, impact, kw = _compute_track_b_unclamped(text)
+    track_b_unclamped = cve + impact + kw
+    track_b_final = min(track_b_unclamped, 75.0)
+
+    trigger_match = detect_trigger(text)
+    if trigger_match is not None:
+        base = TRIGGER_BASE[trigger_match.trigger]
+        bonus = min(track_b_unclamped, 20.0)
+        track_a = min(base + bonus, 100.0)
+        final = max(track_a, track_b_final)
+        return ArticleScore(
+            score=round(final, 2),
+            trigger=trigger_match.trigger,
+            track_a=round(track_a, 2),
+            track_b=round(track_b_final, 2),
+        )
+
+    return ArticleScore(
+        score=round(track_b_final, 2),
+        trigger=None,
+        track_a=0.0,
+        track_b=round(track_b_final, 2),
+    )
