@@ -19,9 +19,18 @@
 
 /* DEFCON 1 — Cocked Pistol pulsing red glow */
 @keyframes defcon1-glow {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(220, 38, 38, 0.5); }
-  50%       { box-shadow: 0 0 22px 8px rgba(220, 38, 38, 0.85); }
+  0%, 100% { box-shadow: 0 0 6px 1px rgba(220, 38, 38, 0.4); }
+  50%       { box-shadow: 0 0 16px 5px rgba(220, 38, 38, 0.7); }
 }
 .defcon1-glow {
-  animation: defcon1-glow 1.5s ease-in-out infinite;
+  animation: defcon1-glow 5s ease-in-out infinite;
+}
+
+/* DEFCON 1 — SVG text glow (level number, term, score) */
+@keyframes defcon1-glow-svg {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(220, 38, 38, 0.7)) drop-shadow(0 0 8px rgba(220, 38, 38, 0.4)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(220, 38, 38, 1.0)) drop-shadow(0 0 24px rgba(220, 38, 38, 0.7)); }
+}
+.defcon1-glow-svg {
+  animation: defcon1-glow-svg 5s ease-in-out infinite;
 }

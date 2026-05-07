@@ -105,7 +105,7 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
       </div>
 
       {/* SVG Gauge */}
-      <div className={`flex justify-center${status.level === 1 ? " defcon1-glow rounded-full" : ""}`}>
+      <div className="flex justify-center">
         <svg viewBox="0 0 200 155" className="w-full max-w-[240px]" aria-label={`DEFCON ${status.level}: ${level.term}`}>
 
           {/* Background track */}
@@ -149,36 +149,38 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
           <circle cx={CX} cy={CY} r={5} fill="white" opacity={0.9} />
           <circle cx={CX} cy={CY} r={3} fill={level.color} />
 
-          {/* Level number — placed below the arc, not overlapping it */}
-          <text
-            x={CX} y={CY + 32}
-            textAnchor="middle"
-            fontSize="28"
-            fontWeight="bold"
-            fontFamily="monospace"
-            fill={level.color}
-          >
-            {status.level}
-          </text>
-          <text
-            x={CX} y={CY + 46}
-            textAnchor="middle"
-            fontSize="9"
-            fontWeight="600"
-            letterSpacing="1"
-            fill={level.color}
-            opacity={0.8}
-          >
-            {level.term}
-          </text>
-          <text
-            x={CX} y={CY + 58}
-            textAnchor="middle"
-            fontSize="8"
-            fill="#6b7280"
-          >
-            {score} / 100
-          </text>
+          {/* Level number, term, score — glow only these at DEFCON 1 */}
+          <g className={status.level === 1 ? "defcon1-glow-svg" : undefined}>
+            <text
+              x={CX} y={CY + 32}
+              textAnchor="middle"
+              fontSize="28"
+              fontWeight="bold"
+              fontFamily="monospace"
+              fill={level.color}
+            >
+              {status.level}
+            </text>
+            <text
+              x={CX} y={CY + 46}
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="600"
+              letterSpacing="1"
+              fill={level.color}
+              opacity={0.8}
+            >
+              {level.term}
+            </text>
+            <text
+              x={CX} y={CY + 58}
+              textAnchor="middle"
+              fontSize="8"
+              fill="#6b7280"
+            >
+              {score} / 100
+            </text>
+          </g>
         </svg>
       </div>
 
