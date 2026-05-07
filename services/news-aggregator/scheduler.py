@@ -5,8 +5,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import settings
 from db.connection import get_pool
-from db.articles import upsert_article, upsert_dedup_log, trim_old_articles, get_recent_articles, get_new_article_count_since
-from db.defcon import insert_defcon_history
+from db.articles import upsert_article, upsert_dedup_log, trim_old_articles, get_recent_articles, get_new_article_count_since, get_articles_in_window
+from db.defcon import insert_defcon_history_v1, insert_defcon_history_v2
+from db.sticky_level import read_sticky_state, write_sticky_state, compute_displayed_level
+from pipeline.scoring_v2 import compute_global_score_v2
 from cache.redis_client import get_redis, publish_cache_invalidation
 from cache.volume import record_volume, get_volume_baseline
 from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, JACCARD_THRESHOLD, RECENT_TITLES_KEY
@@ -19,6 +21,19 @@ from feeds.security_affairs import SecurityAffairsFeed
 from feeds.the_register import TheRegisterFeed
 
 logger = logging.getLogger(__name__)
+
+
+def _level_from_score(score: float) -> int:
+    if score >= 80:
+        return 1
+    if score >= 60:
+        return 2
+    if score >= 40:
+        return 3
+    if score >= 20:
+        return 4
+    return 5
+
 
 FEEDS = [
     BleepingComputerFeed(),
@@ -108,12 +123,30 @@ async def run_fetch_cycle():
 
     since = datetime.now(timezone.utc) - timedelta(hours=1)
     new_count = await get_new_article_count_since(pool, since)
-    recent = await get_recent_articles(pool, limit=20)
     await record_volume(redis, new_count)
     avg_vol = await get_volume_baseline(redis)
-    factors = compute_global_score(recent, new_count, avg_volume=avg_vol)
-    await insert_defcon_history(pool, factors, len(recent))
-    logger.info(f"Defcon score: {factors.total:.1f} (level {factors.level} - {factors.label})")
+
+    if settings.scorer_version == "v2":
+        window = await get_articles_in_window(pool, hours=24)
+        g = compute_global_score_v2(window, new_count=new_count, baseline=avg_vol)
+        raw_level = _level_from_score(g.score)
+        sticky_state = await read_sticky_state(pool)
+        sticky_result = compute_displayed_level(raw_level, sticky_state, datetime.now(timezone.utc))
+        await write_sticky_state(pool, sticky_result)
+        await insert_defcon_history_v2(
+            pool, g,
+            raw_level=raw_level,
+            displayed_level=sticky_result.displayed_level,
+            article_window=len(window),
+        )
+        logger.info(
+            f"Defcon v2 score: {g.score:.1f} (raw level {raw_level}, displayed {sticky_result.displayed_level}, trigger={g.trigger})"
+        )
+    else:
+        recent = await get_recent_articles(pool, limit=20)
+        factors = compute_global_score(recent, new_count, avg_volume=avg_vol)
+        await insert_defcon_history_v1(pool, factors, len(recent))
+        logger.info(f"Defcon v1 score: {factors.total:.1f} (level {factors.level} - {factors.label})")
 
     await pool.execute("UPDATE last_refresh SET refreshed_at = NOW() WHERE id = 1")
     await publish_cache_invalidation()
