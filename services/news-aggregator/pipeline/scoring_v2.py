@@ -152,3 +152,65 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
         track_a=0.0,
         track_b=round(track_b_final, 2),
     )
+
+
+from datetime import datetime, timezone
+
+
+@dataclass(frozen=True)
+class GlobalScore:
+    score: float
+    weighted_max: float
+    volume_bonus: float
+    trigger: Optional[TriggerType]
+    trigger_article_id: Optional[str]
+    trigger_article_title: Optional[str]
+
+
+_WINDOW_HOURS = 24.0
+_VOLUME_BONUS_CAP = 10.0
+
+
+def _age_hours(published_at: datetime) -> float:
+    now = datetime.now(timezone.utc)
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=timezone.utc)
+    return (now - published_at).total_seconds() / 3600.0
+
+
+def compute_global_score_v2(
+    articles_in_window: list[dict],
+    new_count: int,
+    baseline: Optional[float],
+) -> GlobalScore:
+    """
+    Global v2 score = clamp(weighted_max + volume_bonus, 0, 100).
+
+    Each article in `articles_in_window` must have:
+      id, title, defcon_score, defcon_trigger, published_at (datetime, tz-aware preferred).
+    """
+    weighted_max = 0.0
+    winner: Optional[dict] = None
+    for art in articles_in_window:
+        weight = max(0.0, 1.0 - _age_hours(art["published_at"]) / _WINDOW_HOURS)
+        contribution = float(art["defcon_score"]) * weight
+        if contribution > weighted_max:
+            weighted_max = contribution
+            winner = art
+
+    if baseline is None or baseline <= 0:
+        volume_bonus = 0.0
+    else:
+        ratio = new_count / baseline
+        volume_bonus = max(0.0, min((ratio - 1.0) * 10.0, _VOLUME_BONUS_CAP))
+
+    total = min(weighted_max + volume_bonus, 100.0)
+
+    return GlobalScore(
+        score=round(total, 2),
+        weighted_max=round(weighted_max, 2),
+        volume_bonus=round(volume_bonus, 2),
+        trigger=winner["defcon_trigger"] if winner else None,
+        trigger_article_id=str(winner["id"]) if winner else None,
+        trigger_article_title=winner["title"] if winner else None,
+    )

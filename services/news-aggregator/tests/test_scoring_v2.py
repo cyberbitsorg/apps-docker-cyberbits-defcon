@@ -137,3 +137,78 @@ def test_article_v2_returns_dataclass_with_fields():
     assert hasattr(s, "trigger")
     assert hasattr(s, "track_a")
     assert hasattr(s, "track_b")
+
+
+from datetime import datetime, timedelta, timezone
+from pipeline.scoring_v2 import compute_global_score_v2, GlobalScore
+
+
+def _article(score, trigger=None, age_hours=0, title="t", aid="x"):
+    return {
+        "id": aid,
+        "title": title,
+        "defcon_score": float(score),
+        "defcon_trigger": trigger,
+        "published_at": datetime.now(timezone.utc) - timedelta(hours=age_hours),
+    }
+
+
+def test_global_v2_empty_window_zero():
+    g = compute_global_score_v2(articles_in_window=[], new_count=0, baseline=None)
+    assert g.score == 0.0
+    assert g.trigger is None
+    assert g.weighted_max == 0.0
+
+
+def test_global_v2_picks_highest_weighted():
+    arts = [
+        _article(90, trigger="active_exploitation", age_hours=0, aid="a"),
+        _article(50, trigger=None, age_hours=0, aid="b"),
+    ]
+    g = compute_global_score_v2(arts, new_count=5, baseline=5.0)
+    assert g.weighted_max == pytest.approx(90.0)
+    assert g.trigger == "active_exploitation"
+    assert g.trigger_article_id == "a"
+
+
+def test_global_v2_age_decays_weight():
+    # 90-pt article, 12h old, weight = 0.5 → contribution = 45
+    # 50-pt article, 0h old, weight = 1.0 → contribution = 50
+    arts = [
+        _article(90, trigger="active_exploitation", age_hours=12, aid="old"),
+        _article(50, trigger=None, age_hours=0, aid="fresh"),
+    ]
+    g = compute_global_score_v2(arts, new_count=5, baseline=5.0)
+    assert g.trigger_article_id == "fresh"
+    assert g.weighted_max == pytest.approx(50.0)
+
+
+def test_global_v2_volume_bonus_baseline_zero():
+    arts = [_article(40, age_hours=0)]
+    g = compute_global_score_v2(arts, new_count=10, baseline=5.0)
+    # ratio 2.0, bonus = clamp((2.0-1.0)*10, 0, 10) = 10
+    assert g.volume_bonus == pytest.approx(10.0)
+
+
+def test_global_v2_volume_bonus_capped():
+    arts = [_article(40, age_hours=0)]
+    g = compute_global_score_v2(arts, new_count=100, baseline=5.0)
+    assert g.volume_bonus == pytest.approx(10.0)
+
+
+def test_global_v2_volume_bonus_below_baseline_zero():
+    arts = [_article(40, age_hours=0)]
+    g = compute_global_score_v2(arts, new_count=2, baseline=5.0)
+    assert g.volume_bonus == 0.0
+
+
+def test_global_v2_cold_start_no_volume_bonus():
+    arts = [_article(40, age_hours=0)]
+    g = compute_global_score_v2(arts, new_count=10, baseline=None)
+    assert g.volume_bonus == 0.0
+
+
+def test_global_v2_total_clamped_100():
+    arts = [_article(95, trigger="active_exploitation", age_hours=0)]
+    g = compute_global_score_v2(arts, new_count=100, baseline=5.0)
+    assert g.score == 100.0  # 95 + 10 capped
