@@ -7,24 +7,7 @@ Global:       4 dimensions × 25 pts  = 0-100  (volume spike, CVE avg, impact av
 import re
 from dataclasses import dataclass
 
-TIER1 = [
-    "zero-day", "zero day", "nation-state", "nation state",
-    "state-sponsored", "state sponsored",
-    "ransomware attack", "critical infrastructure",
-]
-TIER2 = [
-    "ransomware", "backdoor", "supply chain", "apt", "wiper",
-    "botnet", "ddos", "rce", "remote code execution",
-    "rootkit", "privilege escalation", "lateral movement",
-]
-TIER3 = [
-    "vulnerability", "exploit", "patch", "breach", "malware",
-    "phishing", "cve", "trojan", "spyware",
-    "data leak", "threat actor", "unauthorized access", "credential",
-]
-# "zero-day" intentionally absent from TIER3 — already scored via TIER1
-# Short terms that appear as substrings in unrelated words ("rce" in "force", "apt" in "capture")
-_WB_REQUIRED = frozenset({"rce", "apt"})
+from pipeline.vocabulary import TIER1, TIER2, TIER3, WB_REQUIRED as _WB_REQUIRED
 
 SEVERITY_WORDS = {"critical": 9.0, "high": 7.0, "medium": 5.0, "low": 2.5}
 

@@ -14,8 +14,11 @@ async def upsert_article(pool: asyncpg.Pool, article: dict) -> str | None:
     try:
         row = await pool.fetchrow(
             """
-            INSERT INTO articles (guid, title, summary, url, source, published_at, raw_categories, defcon_score)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO articles (
+                guid, title, summary, url, source, published_at,
+                raw_categories, defcon_score, defcon_trigger
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (guid) DO NOTHING
             RETURNING id
             """,
@@ -27,6 +30,7 @@ async def upsert_article(pool: asyncpg.Pool, article: dict) -> str | None:
             published_at,
             article["raw_categories"],
             article["defcon_score"],
+            article.get("defcon_trigger"),  # Optional — None for v1 path
         )
         return str(row["id"]) if row else None
     except Exception as e:
@@ -114,3 +118,23 @@ async def get_new_article_count_since(pool: asyncpg.Pool, since: datetime) -> in
         since,
     )
     return int(row["count"])
+
+
+async def get_articles_in_window(pool: asyncpg.Pool, hours: int = 24) -> list[dict]:
+    """
+    Articles published in the last `hours` with non-zero defcon_score.
+    Returns dicts with id, title, defcon_score, defcon_trigger, published_at.
+    Used by global scoring v2.
+    """
+    rows = await pool.fetch(
+        """
+        SELECT id, title, defcon_score, defcon_trigger, published_at
+        FROM articles
+        WHERE is_deleted = FALSE
+          AND published_at >= NOW() - ($1 || ' hours')::interval
+          AND defcon_score > 0
+        ORDER BY defcon_score DESC
+        """,
+        str(hours),
+    )
+    return [dict(r) for r in rows]

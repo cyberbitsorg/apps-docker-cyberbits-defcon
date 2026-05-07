@@ -199,24 +199,34 @@ Temporal conflicts (different months/years in titles) are never flagged as dupli
 
 Scoring runs at two levels: each article gets its own score, and a separate global score determines the current DEFCON level.
 
-Per-article score (0-100). Based purely on content, three equally weighted dimensions.
+> **v2 scoring model.** Set `SCORER_VERSION=v2` in your environment to enable this model. The default remains `v1` for backward compatibility.
+
+**Per-article score (0–100) — two tracks, highest wins.**
+
+Each article is evaluated two ways simultaneously, and whichever track produces the higher score wins.
+
+*Track A — Decisive triggers.* Certain events are unambiguous enough that they should move the needle immediately, regardless of how much detail the article contains. If an article matches one of these patterns, it scores 75–80 on its own:
+
+| Trigger | Score |
+|---|---|
+| Active exploitation in the wild | 80 |
+| Added to CISA's Known Exploited Vulnerabilities (KEV) catalog | 80 |
+| Confirmed large-scale data breach (millions of records or critical infrastructure) | 80 |
+| Named APT or nation-state campaign reported | 75 |
+
+*Track B — Content depth (capped at 75).* For articles that don't hit a decisive trigger, the score is built from three dimensions:
 
 | Dimension | Measures |
 |---|---|
-| CVE Severity | CVSS scores extracted from the text, or inferred from severity keywords (critical/high/medium/low) |
-| Impact | Scale signals: millions affected, critical infrastructure targeted, active exploitation, large data breaches |
-| Keywords | 3-tier threat vocabulary — nation-state attacks and zero-days score much higher than generic security terms |
+| CVE Severity | CVSS score extracted from the text, or inferred from severity keywords only when a CVE ID is also present |
+| Impact | Scale signals: millions affected, critical infrastructure targeted, breach language |
+| Keywords | 3-tier threat vocabulary, normalized by article length so short breaking-news items aren't penalized |
 
-Global DEFCON score (0-100). Four dimensions, reflecting the current threat landscape across the recent article window.
+**Global score (what sets the DEFCON level).**
 
-| Dimension | Measures |
-|---|---|
-| Volume spike | How current fetch activity compares to the rolling 7-day baseline. A sudden surge signals breaking news |
-| CVE Severity | Average CVE/severity level across recent articles |
-| Impact | Average impact signals across recent articles |
-| Keywords | Average keyword threat density across recent articles |
+The global score is not a simple average. It takes the highest-scoring article from the past 24 hours and weights it by recency — articles from the last few hours count more than older ones. A volume bonus of up to 10 extra points is added when the current hourly article rate is more than double the 7-day average, signalling an unusual surge of breaking coverage.
 
-The volume dimension uses a rolling baseline so weekends and quiet periods don't artificially deflate the score; what matters is whether activity is unusually high *relative to normal*, not the raw count.
+**Sticky-level behavior.** The displayed DEFCON level does not drop immediately when the threat picture improves. When severity falls, the gauge holds its current level for 6 hours, then steps down one level at a time until it reaches the level the raw score actually warrants. This prevents the gauge from bouncing up and down during normal news cycles.
 
 | Score | DEFCON | Label | Meaning |
 |---|---|---|---|

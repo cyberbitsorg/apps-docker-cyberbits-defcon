@@ -50,6 +50,7 @@ services:
       FETCH_INTERVAL_MINUTES: "${FETCH_INTERVAL_MINUTES:-60}"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
       INTERNAL_SECRET: ${INTERNAL_SECRET}
+      SCORER_VERSION: "${SCORER_VERSION:-v1}"
     volumes:
       - /etc/localtime:/etc/localtime:ro
     depends_on:

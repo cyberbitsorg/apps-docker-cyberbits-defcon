@@ -1,8 +1,28 @@
 export interface DefconFactors {
-  volume_score: number;
-  cve_score: number;
-  impact_score: number;
-  keyword_score: number;
+  // v1 (legacy — present on rows pre-cutover)
+  volume_score?: number;
+  cve_score?: number;
+  impact_score?: number;
+  keyword_score?: number;
+  // v2
+  trigger?: TriggerType | null;
+  trigger_article_id?: string;
+  trigger_article_title?: string;
+  weighted_max?: number;
+  volume_bonus?: number;
+  raw_level?: number;
+  displayed_level?: number;
+}
+
+export type TriggerType =
+  | "active_exploitation"
+  | "confirmed_breach"
+  | "apt_campaign"
+  | "kev_addition";
+
+export interface TriggerArticle {
+  id: string;
+  title: string;
 }
 
 export interface DefconStatus {
@@ -13,6 +33,12 @@ export interface DefconStatus {
   computed_at: string | null;
   factors: DefconFactors;
   trend: "rising" | "falling" | "stable";
+  // v2 fields (optional for back-compat with old rows)
+  trigger?: TriggerType | null;
+  trigger_article?: TriggerArticle | null;
+  raw_level?: number;
+  displayed_level?: number;
+  sticky_until?: string | null;
 }
 
 export interface DefconHistoryPoint {
