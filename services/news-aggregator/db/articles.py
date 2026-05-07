@@ -14,8 +14,11 @@ async def upsert_article(pool: asyncpg.Pool, article: dict) -> str | None:
     try:
         row = await pool.fetchrow(
             """
-            INSERT INTO articles (guid, title, summary, url, source, published_at, raw_categories, defcon_score)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            INSERT INTO articles (
+                guid, title, summary, url, source, published_at,
+                raw_categories, defcon_score, defcon_trigger
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT (guid) DO NOTHING
             RETURNING id
             """,
@@ -27,6 +30,7 @@ async def upsert_article(pool: asyncpg.Pool, article: dict) -> str | None:
             published_at,
             article["raw_categories"],
             article["defcon_score"],
+            article.get("defcon_trigger"),  # Optional — None for v1 path
         )
         return str(row["id"]) if row else None
     except Exception as e:
