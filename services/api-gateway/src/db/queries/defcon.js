@@ -24,12 +24,17 @@ async function getCurrentDefcon() {
   );
 
   if (!result.rows.length) {
-    return { score: 0, level: 5, label: "Fade Out", color: "#3b82f6", computed_at: null, factors: {}, trend: "stable" };
+    return {
+      score: 0, level: 5, label: "Fade Out", color: "#3b82f6",
+      computed_at: null, factors: {}, trend: "stable",
+      trigger: null, trigger_article: null, raw_level: 5, displayed_level: 5, sticky_until: null,
+    };
   }
 
   const row = result.rows[0];
+  const factors = row.contributing_factors || {};
 
-  // Determine trend from last 3 readings
+  // Trend from last 3 readings
   const trendResult = await pool.query(
     `SELECT score FROM defcon_history ORDER BY computed_at DESC LIMIT 3`
   );
@@ -41,14 +46,33 @@ async function getCurrentDefcon() {
     else if (delta < -5) trend = "falling";
   }
 
+  // v2 fields (present only when contributing_factors has the new shape)
+  const trigger = factors.trigger ?? null;
+  const trigger_article = factors.trigger_article_id
+    ? { id: factors.trigger_article_id, title: factors.trigger_article_title }
+    : null;
+  const raw_level      = factors.raw_level      ?? row.level;
+  const displayed_level = factors.displayed_level ?? row.level;
+
+  // Read sticky_until from last_refresh
+  const stickyRow = await pool.query(
+    `SELECT min_level_until_at FROM last_refresh WHERE id = 1`
+  );
+  const sticky_until = stickyRow.rows[0]?.min_level_until_at ?? null;
+
   return {
     score: parseFloat(row.score),
     level: row.level,
     label: LEVEL_LABELS[row.level] || "UNKNOWN",
     color: LEVEL_COLORS[row.level] || "#6b7280",
     computed_at: row.computed_at,
-    factors: row.contributing_factors || {},
+    factors,
     trend,
+    trigger,
+    trigger_article,
+    raw_level,
+    displayed_level,
+    sticky_until,
   };
 }
 
