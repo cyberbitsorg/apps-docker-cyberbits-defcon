@@ -41,9 +41,9 @@ def _extract_cvss_v2(text: str) -> float:
     if scores:
         return max(scores)
     if _CVE_ID_RE.search(text):
-        for word, score in _SEVERITY_WORDS.items():
-            if re.search(rf"\b{word}\b", text, re.IGNORECASE):
-                return score
+        matching = [score for word, score in _SEVERITY_WORDS.items()
+                    if re.search(rf"\b{word}\b", text, re.IGNORECASE)]
+        return max(matching) if matching else 0.0
     return 0.0
 
 
@@ -90,10 +90,9 @@ def _extract_keyword_score_normalized(text: str) -> float:
     """
     Length-normalized keyword score, scaled to 0-25.
 
-    Density = raw / max(1.0, log2(token_count)). Denominator chosen so a typical
-    400-token critical article saturates near 25 (log2(400) ~= 8.6, so a raw of
-    ~21 yields ~22-25 after the (raw/density)/cap*25 transform). Long boilerplate
-    no longer wins.
+    Density = raw / max(1.0, log2(token_count + 1)). A typical 400-token article
+    with raw ≈ 26 saturates near 25 (log2(401) ≈ 8.65, density ≈ 3.0, score ≈ 25).
+    Long boilerplate no longer wins.
     """
     raw = _extract_keyword_raw(text)
     if raw == 0:
@@ -137,6 +136,8 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
         base = TRIGGER_BASE[trigger_match.trigger]
         bonus = min(track_b_unclamped, 20.0)
         track_a = min(base + bonus, 100.0)
+        # track_a >= track_b_final when any trigger fires (base >= 75, cap <= 75);
+        # max() guards against future TRIGGER_BASE changes.
         final = max(track_a, track_b_final)
         return ArticleScore(
             score=round(final, 2),

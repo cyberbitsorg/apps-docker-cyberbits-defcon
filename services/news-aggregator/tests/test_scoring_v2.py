@@ -3,6 +3,8 @@ from pipeline.scoring_v2 import (
     _extract_cvss_v2,
     _extract_impact_raw_v2,
     _extract_keyword_score_normalized,
+    compute_article_score_v2,
+    ArticleScore,
 )
 
 
@@ -70,9 +72,6 @@ def test_keyword_caps_at_25():
     # extremely keyword-dense text should still cap at 25
     text = "zero-day nation-state ransomware attack critical infrastructure rce ddos backdoor exploit malware breach cve"
     assert _extract_keyword_score_normalized(text) <= 25.0
-
-
-from pipeline.scoring_v2 import compute_article_score_v2, ArticleScore
 
 
 def test_article_v2_palo_alto_zero_day():
