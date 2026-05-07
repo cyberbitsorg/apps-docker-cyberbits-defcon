@@ -15,6 +15,7 @@ CREATE TABLE articles (
     fetched_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     raw_categories  TEXT[],
     defcon_score    NUMERIC(5,2) NOT NULL DEFAULT 0,
+    defcon_trigger  TEXT,
     is_deleted      BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -62,8 +63,10 @@ CREATE INDEX idx_dedup_log_fingerprint ON dedup_log (fingerprint);
 
 -- Last refresh timestamp (single row)
 CREATE TABLE last_refresh (
-    id              INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    refreshed_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                  INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    refreshed_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    min_level_until_at  TIMESTAMPTZ,
+    min_level_floor     SMALLINT
 );
 
 INSERT INTO last_refresh (id, refreshed_at) VALUES (1, NOW());
