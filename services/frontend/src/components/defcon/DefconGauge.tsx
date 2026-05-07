@@ -53,13 +53,34 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
   const TrendIcon  = status.trend === "rising" ? TrendingUp : status.trend === "falling" ? TrendingDown : Minus;
   const trendColor = status.trend === "rising" ? "text-red-400" : status.trend === "falling" ? "text-green-400" : "text-gray-500";
 
-  const factors = status.factors;
-  const factorItems = factors ? [
-    { label: "Volume",   value: factors.volume_score   },
-    { label: "CVE",      value: factors.cve_score      },
-    { label: "Impact",   value: factors.impact_score   },
-    { label: "Keywords", value: factors.keyword_score  },
-  ] : [];
+  const trigger = status.trigger ?? null;
+  const triggerArticle = status.trigger_article ?? null;
+
+  const TRIGGER_LABELS: Record<string, string> = {
+    active_exploitation: "Active exploitation",
+    confirmed_breach:    "Confirmed breach",
+    apt_campaign:        "Nation-state activity",
+    kev_addition:        "CISA KEV update",
+  };
+
+  let causalSentence: { label: string; title: string | null } | null = null;
+  if (trigger && triggerArticle) {
+    causalSentence = { label: TRIGGER_LABELS[trigger] ?? "Elevated", title: triggerArticle.title };
+  } else if (status.score === 0) {
+    causalSentence = { label: "No notable threats", title: null };
+  } else {
+    causalSentence = { label: "Elevated", title: "by recent activity" };
+  }
+
+  // Sticky cooldown subtitle: shown when displayed_level > raw_level (less severe raw, holding)
+  const showSticky =
+    status.sticky_until &&
+    typeof status.raw_level === "number" &&
+    typeof status.displayed_level === "number" &&
+    status.displayed_level < status.raw_level;
+  const stickyHoursLeft = showSticky
+    ? Math.max(0, Math.ceil((new Date(status.sticky_until!).getTime() - Date.now()) / 3_600_000))
+    : 0;
 
   const sparkScores = history.map(h => h.score);
   const minScore = sparkScores.length ? Math.min(...sparkScores) : 0;
@@ -161,25 +182,29 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
         </svg>
       </div>
 
-      {/* Factor bars */}
-      {factorItems.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
-          {factorItems.map((f) => (
-            <div key={f.label} className="flex flex-col gap-0.5">
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
-                <span>{f.label}</span>
-                <span>{f.value.toFixed(1)}</span>
-              </div>
-              <div className="h-1 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${(f.value / 25) * 100}%`, backgroundColor: level.color }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Causal sentence */}
+      <div className="flex flex-col gap-1">
+        <p className="text-xs text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+          Driver
+        </p>
+        <p className="text-sm text-gray-100">
+          <span className="font-semibold" style={{ color: level.color }}>
+            {causalSentence.label}
+          </span>
+          {causalSentence.title && (
+            <>
+              {": "}
+              <span className="text-gray-300">{causalSentence.title}</span>
+            </>
+          )}
+        </p>
+        {showSticky && (
+          <p className="text-xs text-gray-500 italic">
+            Holding at level {status.displayed_level} — recovering from earlier event
+            {stickyHoursLeft > 0 ? ` (${stickyHoursLeft}h until reassessment)` : " (reassessing soon)"}
+          </p>
+        )}
+      </div>
 
       {/* 24h sparkline */}
       {history.length > 1 && (
