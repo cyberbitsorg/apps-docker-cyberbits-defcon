@@ -182,6 +182,12 @@ variable "defcon_log_level" {
   default     = "INFO"
 }
 
+variable "defcon_scorer_version" {
+  description = "Scoring pipeline version for the news aggregator: v1 (default) or v2"
+  type        = string
+  default     = "v1"
+}
+
 variable "defcon_redis_maxmemory" {
   description = "Redis maxmemory limit"
   type        = string

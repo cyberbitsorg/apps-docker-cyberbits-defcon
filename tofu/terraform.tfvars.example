@@ -81,6 +81,9 @@ defcon_admin_password = "change-me-strong-password"
 # How often to fetch new articles (minutes).
 # defcon_fetch_interval_minutes = 60
 
+# Scoring pipeline version: v1 (original) or v2 (decisive-trigger model).
+defcon_scorer_version = "v2"
+
 # =============================================================================
 # MEMORY LIMITS
 # =============================================================================

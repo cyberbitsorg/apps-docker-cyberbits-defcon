@@ -224,6 +224,7 @@ resource "docker_container" "news_aggregator" {
     "REDIS_URL=redis://:${random_password.redis.result}@redis:6379",
     "FETCH_INTERVAL_MINUTES=${var.fetch_interval_minutes}",
     "LOG_LEVEL=${var.log_level}",
+    "SCORER_VERSION=${var.scorer_version}",
     "INTERNAL_SECRET=${random_password.internal_secret.result}",
   ]
 
