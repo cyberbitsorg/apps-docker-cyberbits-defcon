@@ -44,8 +44,7 @@ class TriggerMatch:
 _ACTIVE_EXPLOITATION_PATTERNS = [
     r"\bactively exploited\b",
     r"\bactive exploitation\b",
-    r"\bexploited(?! vulnerabilit)\b",  # match "exploited" but not when followed by "vulnerabilit" (covers singular and plural)
-    r"\bexploited in (the wild|attacks|the open)\b",
+    r"\bexploited in (the wild|attacks?|the open)\b",
     r"\bin[- ]the[- ]wild\b",
     r"\bunder (active )?attack\b",
     r"\bunder exploitation\b",

@@ -12,6 +12,8 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from pipeline.vocabulary import THREAT_ACTORS
+
 logger = logging.getLogger(__name__)
 
 STOP_WORDS = frozenset({
@@ -26,11 +28,11 @@ STOP_WORDS = frozenset({
 })
 
 # TF-IDF: catch paraphrased headlines with high vocabulary overlap
-TFIDF_THRESHOLD = 0.55
+TFIDF_THRESHOLD = 0.45
 
 # Jaccard: catch headlines sharing key proper nouns even when phrased very differently.
 # "Apple iOS DarkSword update" vs "Apple patches DarkSword iOS devices" → high token overlap.
-JACCARD_THRESHOLD = 0.35
+JACCARD_THRESHOLD = 0.28
 
 # Minimum meaningful token length — skip noise like "18" or "2"
 MIN_TOKEN_LEN = 3
@@ -92,6 +94,34 @@ def _temporal_conflict(title_a: str, title_b: str) -> bool:
     return False
 
 
+# Matches quoted phrases (straight and curly quotes)
+_QUOTED_RE = re.compile(r"['\"‘’“”]([^'\"]{4,})['\"‘’“”]")
+
+
+def _extract_named_phrases(title: str) -> set[str]:
+    return {m.strip().lower() for m in _QUOTED_RE.findall(title)}
+
+
+def _shared_named_phrase(title_a: str, title_b: str) -> bool:
+    """Return True if a quoted phrase from either title also appears verbatim in the other."""
+    a, b = title_a.lower(), title_b.lower()
+    for phrase in _extract_named_phrases(title_a) | _extract_named_phrases(title_b):
+        if phrase in a and phrase in b:
+            return True
+    return False
+
+
+def _shared_actor_and_token(title_a: str, title_b: str) -> bool:
+    """Return True if titles share a known threat actor AND at least one other meaningful token."""
+    a, b = title_a.lower(), title_b.lower()
+    for actor in THREAT_ACTORS:
+        if actor in a and actor in b:
+            actor_tokens = frozenset(actor.split())
+            if (_token_set(title_a) - actor_tokens) & (_token_set(title_b) - actor_tokens):
+                return True
+    return False
+
+
 async def is_duplicate(title: str, redis_client) -> bool:
     """
     Returns True if the article is a duplicate (should be skipped).
@@ -112,10 +142,16 @@ async def is_duplicate(title: str, redis_client) -> bool:
     if recent_titles:
         new_tokens = _token_set(title)
 
-        # 2a — Jaccard overlap (fast, catches proper-noun matches)
+        # 2a — Entity overlap (L0) + Jaccard overlap (fast, catches proper-noun matches)
         for existing in recent_titles:
             if _temporal_conflict(title, existing):
                 continue
+            if _shared_named_phrase(title, existing):
+                logger.info(f"[Dedup L0a] Shared named phrase duplicate: '{title[:60]}' ≈ '{existing[:60]}'")
+                return True
+            if _shared_actor_and_token(title, existing):
+                logger.info(f"[Dedup L0b] Shared threat actor duplicate: '{title[:60]}' ≈ '{existing[:60]}'")
+                return True
             j = _jaccard(new_tokens, _token_set(existing))
             if j >= JACCARD_THRESHOLD:
                 logger.info(f"[Dedup L2-J] Jaccard={j:.2f} duplicate: '{title[:60]}' ≈ '{existing[:60]}'")

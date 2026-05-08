@@ -11,7 +11,7 @@ from db.sticky_level import read_sticky_state, write_sticky_state, compute_displ
 from pipeline.scoring_v2 import compute_global_score_v2
 from cache.redis_client import get_redis, publish_cache_invalidation
 from cache.volume import record_volume, get_volume_baseline
-from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, JACCARD_THRESHOLD, RECENT_TITLES_KEY
+from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, _shared_named_phrase, _shared_actor_and_token, JACCARD_THRESHOLD, RECENT_TITLES_KEY
 from pipeline.normalizer import normalize
 from pipeline.scorer import compute_global_score
 from feeds.bleeping_computer import BleepingComputerFeed
@@ -54,6 +54,12 @@ def _within_batch_duplicate(title: str, seen_titles: list[str]) -> bool:
     for existing in seen_titles:
         if _temporal_conflict(title, existing):
             continue
+        if _shared_named_phrase(title, existing):
+            logger.info(f"[Dedup batch-L0a] Named phrase: '{title[:60]}' ≈ '{existing[:60]}'")
+            return True
+        if _shared_actor_and_token(title, existing):
+            logger.info(f"[Dedup batch-L0b] Threat actor: '{title[:60]}' ≈ '{existing[:60]}'")
+            return True
         j = _jaccard(new_tokens, _token_set(existing))
         if j >= JACCARD_THRESHOLD:
             logger.info(f"[Dedup batch] Jaccard={j:.2f}: '{title[:60]}' ≈ '{existing[:60]}'")

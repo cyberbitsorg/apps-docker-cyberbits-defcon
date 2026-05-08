@@ -61,6 +61,10 @@ def _extract_impact_raw_v2(text: str) -> int:
         raw += 3
     if re.search(r"(?:\d{6,}|\d{3,}[kK])\s*(users|records|devices|systems)", text, re.IGNORECASE):
         raw += 3
+    if re.search(r"hundreds of\s+(colleges?|universities|schools|organizations|companies|agencies)", text, re.IGNORECASE):
+        raw += 3
+    if re.search(r"\b(all|most)\s+(major|popular|common)\s+(linux|windows|macos|android|ios|mobile\s+)?(distributions?|versions?|systems?|platforms?|devices?|distros?)\b", text, re.IGNORECASE):
+        raw += 3
     return raw
 
 
@@ -128,7 +132,13 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
         return ArticleScore(score=0.0, trigger=None, track_a=0.0, track_b=0.0)
 
     cve, impact, kw = _compute_track_b_unclamped(text)
-    track_b_unclamped = cve + impact + kw
+
+    # Title keyword bonus — additive to Track B total so it stacks with body keywords
+    # rather than being capped inside the keyword dimension (max 25).
+    title_kw_raw = _extract_keyword_raw(title.lower())
+    title_kw_boost = min(title_kw_raw / 8.0, 1.0) * 12.0
+
+    track_b_unclamped = cve + impact + kw + title_kw_boost
     track_b_final = min(track_b_unclamped, 75.0)
 
     trigger_match = detect_trigger(text)

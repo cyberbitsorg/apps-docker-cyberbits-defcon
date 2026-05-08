@@ -16,9 +16,13 @@ TIER1 = [
 TIER2 = [
     "ransomware", "backdoor", "back door", "supply chain", "apt", "wiper",
     "botnet", "ddos", "rce", "remote code execution",
-    "rootkit", "privilege escalation", "lateral movement",
-    "vishing", "smishing", "credential stuffing",
+    "rootkit", "privilege escalation", "local privilege escalation",
+    "root access", "root privileges", "root shell",
+    "lateral movement", "vishing", "smishing", "credential stuffing",
     "session hijacking", "account takeover",
+    "data exfiltration", "exfiltrate", "exfiltration",
+    "hijack", "hijacking",
+    "bypass authentication", "authentication bypass", "authorization bypass",
 ]
 
 TIER3 = [
@@ -39,6 +43,7 @@ THREAT_ACTORS = [
 CRITICAL_SECTORS = [
     "power grid", "hospital", "water treatment", "government", "military",
     "critical infrastructure", "airline", "bank", "financial",
+    "university", "universities", "college", "colleges", "educational",
 ]
 
 # Short terms that appear as substrings in unrelated words ("rce" in "force", "apt" in "capture")

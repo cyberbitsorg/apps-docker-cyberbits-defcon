@@ -66,9 +66,10 @@ def test_precedence_active_over_breach():
     assert detect_trigger(text).trigger == "active_exploitation"
 
 
-def test_precedence_active_over_kev_and_breach():
+def test_precedence_kev_over_breach():
+    # "known exploited" + cisa + adds → kev_addition wins over confirmed_breach
     text = "cisa adds known exploited bug; vendor confirms breach affecting millions"
-    assert detect_trigger(text).trigger == "active_exploitation"  # exploited matches active first
+    assert detect_trigger(text).trigger == "kev_addition"
 
 
 def test_no_false_positive_apt_substring():
