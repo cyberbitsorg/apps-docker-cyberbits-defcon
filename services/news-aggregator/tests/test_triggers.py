@@ -144,3 +144,49 @@ def test_critical_scope_vuln_scope_alone_no_trigger():
     text = "all major linux distributions release scheduled monthly updates"
     match = detect_trigger(text)
     assert match is None or match.trigger != "critical_scope_vuln"
+
+
+def test_malware_campaign_stealer_targeting():
+    text = "new infostealer campaign targeting macos via fake support sites"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "malware_campaign"
+
+
+def test_malware_campaign_known_stealer_deploys():
+    text = "fake macos guides deploy amos and shub stealer via terminal commands"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "malware_campaign"
+
+
+def test_malware_campaign_loader_distributes():
+    text = "new loader distributes secondary payloads to enterprise endpoints"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "malware_campaign"
+
+
+def test_malware_campaign_rat_with_word_boundary():
+    text = "remote access trojan (rat) drops on victim machines"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "malware_campaign"
+
+
+def test_malware_campaign_stealer_alone_no_trigger():
+    text = "researchers analyzed redline stealer source code"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "malware_campaign"
+
+
+def test_malware_campaign_campaign_word_alone_no_trigger():
+    text = "marketing campaign targets gen z consumers"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "malware_campaign"
+
+
+def test_malware_campaign_no_false_positive_rat_substring():
+    text = "rate limiting accelerates degrade and corporate strategy"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "malware_campaign"

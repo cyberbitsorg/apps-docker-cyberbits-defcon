@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 from typing import Optional, Literal
 
-from pipeline.vocabulary import THREAT_ACTORS, CRITICAL_SECTORS
+from pipeline.vocabulary import THREAT_ACTORS, CRITICAL_SECTORS, KNOWN_STEALERS
 
 TriggerType = Literal[
     "active_exploitation", "confirmed_breach", "apt_campaign",
@@ -26,6 +26,7 @@ TRIGGER_BASE: dict[TriggerType, int] = {
     "kev_addition": 80,
     "apt_campaign": 75,
     "critical_scope_vuln": 70,
+    "malware_campaign": 60,
 }
 
 # Precedence (highest first): when multiple triggers match, the first listed wins.
@@ -35,6 +36,7 @@ PRECEDENCE: tuple[TriggerType, ...] = (
     "critical_scope_vuln",
     "confirmed_breach",
     "apt_campaign",
+    "malware_campaign",
 )
 
 
@@ -165,12 +167,38 @@ def _match_critical_scope_vuln(text: str) -> Optional[str]:
     return vuln.group(0)
 
 
+_MALWARE_NOUN_RE = re.compile(
+    r"\b(stealer|infostealer|info-stealer|loader|dropper|keylogger|rat)\b",
+    re.IGNORECASE,
+)
+
+_KNOWN_STEALER_RE = re.compile(
+    r"\b(" + "|".join(re.escape(s) for s in KNOWN_STEALERS) + r")\b",
+    re.IGNORECASE,
+)
+
+_CAMPAIGN_VERB_RE = re.compile(
+    r"\b(targeting|deploys?|distributes?|spreads?|drops?|delivers?|campaign)\b",
+    re.IGNORECASE,
+)
+
+
+def _match_malware_campaign(text: str) -> Optional[str]:
+    noun = _MALWARE_NOUN_RE.search(text) or _KNOWN_STEALER_RE.search(text)
+    if not noun:
+        return None
+    if not _CAMPAIGN_VERB_RE.search(text):
+        return None
+    return noun.group(0)
+
+
 _DETECTORS = {
     "active_exploitation": _match_active_exploitation,
     "kev_addition": _match_kev,
     "confirmed_breach": _match_breach,
     "apt_campaign": _match_apt,
     "critical_scope_vuln": _match_critical_scope_vuln,
+    "malware_campaign": _match_malware_campaign,
 }
 
 
