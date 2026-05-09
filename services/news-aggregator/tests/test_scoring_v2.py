@@ -270,3 +270,52 @@ def test_cve_inference_no_scope_no_inference():
 def test_cve_inference_explicit_cvss_still_wins():
     text = "zero-day in all major linux distros, cvss 9.5 confirmed"
     assert _extract_cvss_v2(text) == 9.5
+
+
+# --- Calibration target tests ---
+
+
+def test_calibration_clickfix_macos_stealer_campaign():
+    title = "Fake macOS Troubleshooting Sites Used to Steal iCloud Data in ClickFix Scam"
+    summary = (
+        "Microsoft researchers warn of a new ClickFix campaign targeting macOS "
+        "with fake guides on Medium and Craft to deploy AMOS and SHub Stealer "
+        "via Terminal commands."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "malware_campaign", f"expected malware_campaign, got {art.trigger}"
+    assert 55 <= art.score <= 80, f"expected 55-80, got {art.score}"
+
+
+def test_calibration_dirty_frag_linux_zero_day():
+    title = "New Linux 'Dirty Frag' zero-day gives root on all major distros"
+    summary = (
+        "A new Linux zero-day vulnerability, named Dirty Frag, allows local "
+        "attackers to gain root privileges on most major Linux distributions "
+        "with a single command."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "critical_scope_vuln", f"expected critical_scope_vuln, got {art.trigger}"
+    assert 70 <= art.score <= 92, f"expected 70-92, got {art.score}"
+
+
+def test_calibration_routine_patch_news_stays_low():
+    title = "Microsoft releases August security patches"
+    summary = (
+        "Microsoft has released its monthly security update covering several "
+        "Windows components. Administrators are advised to review and deploy."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger is None, f"unexpected trigger {art.trigger}"
+    assert art.score < 30, f"expected <30, got {art.score}"
+
+
+def test_calibration_active_exploitation_still_high():
+    title = "CVE-2026-1234 actively exploited in attacks against Fortinet appliances"
+    summary = (
+        "Researchers report active exploitation of a critical authentication "
+        "bypass with cvss 9.8, used by attackers in the wild."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "active_exploitation"
+    assert art.score >= 85, f"expected >=85, got {art.score}"
