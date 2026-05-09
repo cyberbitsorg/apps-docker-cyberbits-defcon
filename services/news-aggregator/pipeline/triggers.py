@@ -101,6 +101,11 @@ _APT_VERB = re.compile(
     re.IGNORECASE,
 )
 
+_APT_BREACH_VERB = re.compile(
+    r"\b(breach|breached|theft|stole|stolen|leak|leaked|hack|hacked|compromise|compromised|exfiltrat\w+)\b",
+    re.IGNORECASE,
+)
+
 _SCOPE_AMPLIFIER_PATTERNS = [
     r"\b(all|most)\s+major\s+(linux|windows|macos|android|ios|distros?|distributions?|systems?|platforms?|versions?|releases?)\b",
     r"\bevery\s+(version|release)\b",
@@ -165,8 +170,8 @@ def _match_apt(text: str) -> Optional[str]:
         return None
     if not _APT_VERB.search(text):
         return None
-    if not _CRITICAL_SECTOR_RE.search(text):
-        # require a target/sector mention for apt_campaign — generic "apt campaign" alone is too weak
+    if not (_CRITICAL_SECTOR_RE.search(text) or _APT_BREACH_VERB.search(text)):
+        # require a target/sector mention OR a breach/theft verb — generic actor mention alone is too weak
         return None
     return has_hint.group(0)
 

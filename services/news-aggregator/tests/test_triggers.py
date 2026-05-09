@@ -243,6 +243,21 @@ def test_no_false_positive_exploits_marketing():
     assert match is None or match.trigger != "active_exploitation"
 
 
+def test_apt_threat_actor_with_breach_verb_no_sector():
+    # ShinyHunters + theft verb, no critical sector — must trigger something
+    # (apt_campaign or confirmed_breach takes precedence based on PRECEDENCE).
+    text = "shinyhunters group breach campaign hits multiple companies this week"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger in ("apt_campaign", "confirmed_breach")
+
+
+def test_apt_no_actor_no_sector_no_verb_no_trigger():
+    text = "weekly cybersecurity industry briefing summary"
+    match = detect_trigger(text)
+    assert match is None
+
+
 def test_is_newsletter_title_round():
     assert _is_newsletter_title("Security Affairs Newsletter Round 574")
 
