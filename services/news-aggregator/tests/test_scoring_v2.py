@@ -319,3 +319,23 @@ def test_calibration_active_exploitation_still_high():
     art = compute_article_score_v2(title, summary)
     assert art.trigger == "active_exploitation"
     assert art.score >= 80, f"expected >=80, got {art.score}"
+
+
+def test_newsletter_title_suppresses_trigger():
+    title = "Security Affairs newsletter Round 574 by Pierluigi Paganini"
+    summary = (
+        "A new round of the weekly Security Affairs newsletter has arrived. "
+        "U.S. CISA adds SimpleHelp, Samsung, and D-Link flaws to KEV catalog "
+        "and millions of records breached this week."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger is None, f"newsletter should not trigger, got {art.trigger}"
+    assert art.score < 50, f"newsletter score should be modest, got {art.score}"
+
+
+def test_real_kev_article_still_triggers():
+    # Sanity: the same KEV pattern in a non-newsletter title still fires.
+    title = "CISA Adds Three Linux Flaws to KEV Catalog"
+    summary = "CISA has added three Linux kernel flaws to the Known Exploited Vulnerabilities catalog."
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "kev_addition"

@@ -1,4 +1,4 @@
-from pipeline.triggers import detect_trigger, TRIGGER_BASE, _has_scope_amplifier
+from pipeline.triggers import detect_trigger, TRIGGER_BASE, _has_scope_amplifier, _is_newsletter_title
 
 
 def test_active_exploitation_actively_exploited():
@@ -192,3 +192,15 @@ def test_malware_campaign_no_false_positive_rat_substring():
     text = "rate limiting accelerates degrade and corporate strategy"
     match = detect_trigger(text)
     assert match is None or match.trigger != "malware_campaign"
+
+
+def test_is_newsletter_title_round():
+    assert _is_newsletter_title("Security Affairs Newsletter Round 574")
+
+
+def test_is_newsletter_title_weekly_roundup():
+    assert _is_newsletter_title("Weekly roundup of cybersecurity news")
+
+
+def test_is_newsletter_title_negative():
+    assert not _is_newsletter_title("CISA Adds Three Linux Flaws to KEV Catalog")

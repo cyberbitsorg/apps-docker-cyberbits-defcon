@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from pipeline.vocabulary import TIER1, TIER2, TIER3, WB_REQUIRED
-from pipeline.triggers import detect_trigger, TRIGGER_BASE, TriggerType, _has_scope_amplifier
+from pipeline.triggers import detect_trigger, TRIGGER_BASE, TriggerType, _has_scope_amplifier, _is_newsletter_title
 
 
 # --- shared signal helpers (v2) ---
@@ -167,6 +167,8 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
     track_b_final = min(track_b_unclamped, 80.0)
 
     trigger_match = detect_trigger(text)
+    if trigger_match is not None and _is_newsletter_title(title):
+        trigger_match = None
     if trigger_match is not None:
         base = TRIGGER_BASE[trigger_match.trigger]
         bonus = min(track_b_unclamped, 10.0)

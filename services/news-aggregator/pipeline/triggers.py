@@ -111,6 +111,17 @@ def _has_scope_amplifier(text: str) -> bool:
     return _SCOPE_AMPLIFIER_RE.search(text) is not None
 
 
+_NEWSLETTER_TITLE_RE = re.compile(
+    r"\bnewsletter\b|\bround\s+\d+\b|\bweekly\s+(roundup|recap|digest)\b|\bweek in (review|security)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_newsletter_title(title: str) -> bool:
+    """Aggregator-style titles (weekly newsletter, round-up) should not fire decisive triggers."""
+    return _NEWSLETTER_TITLE_RE.search(title) is not None
+
+
 # --- detection helpers (each returns matched substring or None) ---
 
 def _match_active_exploitation(text: str) -> Optional[str]:
