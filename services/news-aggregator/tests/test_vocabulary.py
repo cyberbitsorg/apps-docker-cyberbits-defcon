@@ -73,3 +73,13 @@ def test_known_stealers_includes_common_families():
 
 def test_wb_required_includes_rat():
     assert "rat" in WB_REQUIRED
+
+
+def test_tier1_has_v23_additions():
+    for kw in ("supply chain attack", "credential stealer"):
+        assert kw in TIER1
+
+
+def test_tier2_has_v23_additions():
+    for kw in ("route to root", "compromised", "compromise", "infect", "infecting"):
+        assert kw in TIER2

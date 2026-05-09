@@ -13,6 +13,7 @@ TIER1 = [
     "state-sponsored", "state sponsored",
     "ransomware attack", "critical infrastructure",
     "infostealer", "stealer campaign", "malware campaign",
+    "supply chain attack", "credential stealer",
 ]
 
 TIER2 = [
@@ -27,6 +28,7 @@ TIER2 = [
     "bypass authentication", "authentication bypass", "authorization bypass",
     "stealer", "info-stealer", "credential theft", "credential harvesting",
     "clickfix", "loader", "dropper", "keylogger", "rat",
+    "route to root", "compromised", "compromise", "infect", "infecting",
 ]
 
 TIER3 = [

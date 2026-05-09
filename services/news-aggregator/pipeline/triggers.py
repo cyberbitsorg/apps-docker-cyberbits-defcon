@@ -210,7 +210,7 @@ def _match_critical_scope_vuln(text: str) -> Optional[str]:
 
 
 _MALWARE_NOUN_RE = re.compile(
-    r"\b(stealer|infostealer|info-stealer|loader|dropper|keylogger|rat)\b",
+    r"\b(stealer|infostealer|info-stealer|loader|dropper|keylogger|rat|malware)\b",
     re.IGNORECASE,
 )
 
@@ -220,7 +220,7 @@ _KNOWN_STEALER_RE = re.compile(
 )
 
 _CAMPAIGN_VERB_RE = re.compile(
-    r"\b(targeting|deploys?|distributes?|spreads?|drops?|delivers?|campaign)\b",
+    r"\b(targeting|deploys?|distributes?|spreads?|drops?|delivers?|campaign|infects?|infecting)\b",
     re.IGNORECASE,
 )
 

@@ -301,3 +301,9 @@ def test_active_exploitation_negation_does_not_apply_to_distant_match():
             "however a separate critical flaw is now actively exploited in the wild")
     match = detect_trigger(text)
     assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_malware_campaign_infects_verb():
+    text = "fake claude ai site infects users with new beagle malware"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "malware_campaign"
