@@ -59,6 +59,10 @@ _ACTIVE_EXPLOITATION_PATTERNS = [
     r"\bunder (active )?attack\b",
     r"\bunder exploitation\b",
     r"\b(zero[- ]day|0[- ]day) exploited\b",
+    r"\bexploits?\s+(cve|known|critical|vuln|flaw|bug|zero[- ]?day)",
+    r"\bexploited\s+as\s+a?\s*(zero|0)[- ]?day\b",
+    r"\bweaponized\b",
+    r"\b(actively\s+)?exploiting\b",
 ]
 
 _KEV_PATTERNS = [

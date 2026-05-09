@@ -194,6 +194,37 @@ def test_malware_campaign_no_false_positive_rat_substring():
     assert match is None or match.trigger != "malware_campaign"
 
 
+def test_active_exploitation_exploits_cve():
+    text = "mirai botnet exploits cve-2025-29635 to target legacy d-link routers"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_active_exploitation_exploited_as_zero_day():
+    text = "nasty cpanel vulnerability probably exploited as a 0-day"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_active_exploitation_weaponized():
+    text = "researchers report weaponized exploit chain affecting fortinet"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_active_exploitation_exploiting():
+    text = "threat actors exploiting unpatched ivanti appliances"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_no_false_positive_exploits_marketing():
+    # "exploits opportunity" must NOT fire active_exploitation
+    text = "company exploits market opportunity in cybersecurity sector"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "active_exploitation"
+
+
 def test_is_newsletter_title_round():
     assert _is_newsletter_title("Security Affairs Newsletter Round 574")
 
