@@ -2,7 +2,7 @@
 DEFCON Scoring v2 — decisive paths + capped stacking.
 
 Per-article: max(track_a, track_b), capped 100. Track A = trigger base + Track B bonus
-capped at 20. Track B = sum of CVE/impact/keyword dimensions, capped at 80.
+capped at 10. Track B = sum of CVE/impact/keyword dimensions, capped at 80.
 
 Global: weighted-max of article scores in last 24h, plus volume bonus, plus sticky
 displayed-level state machine.
@@ -169,10 +169,11 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
     trigger_match = detect_trigger(text)
     if trigger_match is not None:
         base = TRIGGER_BASE[trigger_match.trigger]
-        bonus = min(track_b_unclamped, 20.0)
+        bonus = min(track_b_unclamped, 10.0)
         track_a = min(base + bonus, 100.0)
-        # malware_campaign at base 60 + bonus 20 = 80 ties Track B's 80 cap, so
-        # max() can be load-bearing — keep it explicit.
+        # With bonus cap 10: malware_campaign max = 60+10 = 70, kev_addition max = 75+10 = 85,
+        # active_exploitation max = 80+10 = 90 (before 100 clamp). Track B can still reach 80,
+        # so max() is load-bearing when Track B exceeds Track A (e.g. rich body, no trigger base).
         final = max(track_a, track_b_final)
         return ArticleScore(
             score=round(final, 2),

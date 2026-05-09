@@ -284,7 +284,7 @@ def test_calibration_clickfix_macos_stealer_campaign():
     )
     art = compute_article_score_v2(title, summary)
     assert art.trigger == "malware_campaign", f"expected malware_campaign, got {art.trigger}"
-    assert 55 <= art.score <= 80, f"expected 55-80, got {art.score}"
+    assert 45 <= art.score <= 75, f"expected 45-75, got {art.score}"
 
 
 def test_calibration_dirty_frag_linux_zero_day():
@@ -296,7 +296,7 @@ def test_calibration_dirty_frag_linux_zero_day():
     )
     art = compute_article_score_v2(title, summary)
     assert art.trigger == "critical_scope_vuln", f"expected critical_scope_vuln, got {art.trigger}"
-    assert 70 <= art.score <= 92, f"expected 70-92, got {art.score}"
+    assert 70 <= art.score <= 88, f"expected 70-88, got {art.score}"
 
 
 def test_calibration_routine_patch_news_stays_low():
@@ -318,4 +318,4 @@ def test_calibration_active_exploitation_still_high():
     )
     art = compute_article_score_v2(title, summary)
     assert art.trigger == "active_exploitation"
-    assert art.score >= 85, f"expected >=85, got {art.score}"
+    assert art.score >= 80, f"expected >=80, got {art.score}"
