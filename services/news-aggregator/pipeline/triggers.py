@@ -22,10 +22,10 @@ TriggerType = Literal[
 
 TRIGGER_BASE: dict[TriggerType, int] = {
     "active_exploitation": 80,
-    "confirmed_breach": 80,
-    "kev_addition": 80,
-    "apt_campaign": 75,
+    "kev_addition": 75,
     "critical_scope_vuln": 70,
+    "confirmed_breach": 70,
+    "apt_campaign": 65,
     "malware_campaign": 60,
 }
 

@@ -84,9 +84,11 @@ def test_returns_matched_text_for_logging():
 
 def test_trigger_base_scores():
     assert TRIGGER_BASE["active_exploitation"] == 80
-    assert TRIGGER_BASE["confirmed_breach"] == 80
-    assert TRIGGER_BASE["kev_addition"] == 80
-    assert TRIGGER_BASE["apt_campaign"] == 75
+    assert TRIGGER_BASE["kev_addition"] == 75
+    assert TRIGGER_BASE["critical_scope_vuln"] == 70
+    assert TRIGGER_BASE["confirmed_breach"] == 70
+    assert TRIGGER_BASE["apt_campaign"] == 65
+    assert TRIGGER_BASE["malware_campaign"] == 60
 
 
 def test_scope_amplifier_all_major_distros():
