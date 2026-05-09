@@ -111,3 +111,36 @@ def test_scope_amplifier_negative_routine():
 
 def test_scope_amplifier_negative_single_product():
     assert not _has_scope_amplifier("vulnerability in cisco asa firewall")
+
+
+def test_critical_scope_vuln_zero_day_all_distros():
+    text = "new linux 'dirty frag' zero-day gives root on all major linux distros"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "critical_scope_vuln"
+
+
+def test_critical_scope_vuln_rce_billions_of_devices():
+    text = "remote code execution flaw affects billions of devices"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "critical_scope_vuln"
+
+
+def test_critical_scope_vuln_priv_esc_every_version():
+    text = "privilege escalation vulnerability present in every version of the kernel"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "critical_scope_vuln"
+
+
+def test_critical_scope_vuln_no_scope_no_trigger():
+    text = "zero-day vulnerability in fortinet vpn appliance disclosed"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "critical_scope_vuln"
+
+
+def test_critical_scope_vuln_scope_alone_no_trigger():
+    text = "all major linux distributions release scheduled monthly updates"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "critical_scope_vuln"

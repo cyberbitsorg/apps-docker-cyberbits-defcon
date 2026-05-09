@@ -15,19 +15,24 @@ from typing import Optional, Literal
 
 from pipeline.vocabulary import THREAT_ACTORS, CRITICAL_SECTORS
 
-TriggerType = Literal["active_exploitation", "confirmed_breach", "apt_campaign", "kev_addition"]
+TriggerType = Literal[
+    "active_exploitation", "confirmed_breach", "apt_campaign",
+    "kev_addition", "critical_scope_vuln", "malware_campaign",
+]
 
 TRIGGER_BASE: dict[TriggerType, int] = {
     "active_exploitation": 80,
     "confirmed_breach": 80,
     "kev_addition": 80,
     "apt_campaign": 75,
+    "critical_scope_vuln": 70,
 }
 
 # Precedence (highest first): when multiple triggers match, the first listed wins.
 PRECEDENCE: tuple[TriggerType, ...] = (
     "active_exploitation",
     "kev_addition",
+    "critical_scope_vuln",
     "confirmed_breach",
     "apt_campaign",
 )
@@ -145,11 +150,27 @@ def _match_apt(text: str) -> Optional[str]:
     return has_hint.group(0)
 
 
+_VULN_KEYWORD_RE = re.compile(
+    r"\b(zero[- ]?day|0[- ]?day|RCE|remote code execution|privilege escalation|unauthenticated)\b",
+    re.IGNORECASE,
+)
+
+
+def _match_critical_scope_vuln(text: str) -> Optional[str]:
+    vuln = _VULN_KEYWORD_RE.search(text)
+    if not vuln:
+        return None
+    if not _has_scope_amplifier(text):
+        return None
+    return vuln.group(0)
+
+
 _DETECTORS = {
     "active_exploitation": _match_active_exploitation,
     "kev_addition": _match_kev,
     "confirmed_breach": _match_breach,
     "apt_campaign": _match_apt,
+    "critical_scope_vuln": _match_critical_scope_vuln,
 }
 
 
