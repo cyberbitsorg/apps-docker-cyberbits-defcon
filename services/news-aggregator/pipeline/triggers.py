@@ -73,13 +73,17 @@ _KEV_PATTERNS = [
 ]
 
 _BREACH_VERB = re.compile(
-    r"\b(confirms? breach|breached|data leak|data dump|dump puts|leaked database|claims dump|"
+    r"\b(confirms? breach|breached|data breach|data leak|data dump|dump puts|leaked database|claims dump|"
     r"(stolen|stole|theft of|claimed theft of|stealing) .{0,40}(records|users|emails|customers|accounts|tokens|credentials))\b",
     re.IGNORECASE,
 )
 
 _BREACH_SCALE_MILLIONS = re.compile(r"\bmillions? of\b", re.IGNORECASE)
 _BREACH_SCALE_NUMERIC  = re.compile(r"\b\d+[kKmM]\+?\s*(users|records|emails|accounts|customers)\b", re.IGNORECASE)
+_BREACH_SCALE_COMMA = re.compile(
+    r"\b\d{1,3}(?:,\d{3})+\s+(users|records|emails|accounts|customers|people|schools|patients|students|employees|individuals|organizations)\b",
+    re.IGNORECASE,
+)
 
 _CRITICAL_SECTOR_RE = re.compile(
     r"\b(" + "|".join(re.escape(s) for s in CRITICAL_SECTORS) + r")\b",
@@ -175,6 +179,7 @@ def _match_breach(text: str) -> Optional[str]:
     has_scale = (
         _BREACH_SCALE_MILLIONS.search(text)
         or _BREACH_SCALE_NUMERIC.search(text)
+        or _BREACH_SCALE_COMMA.search(text)
         or _CRITICAL_SECTOR_RE.search(text)
     )
     if not has_scale:

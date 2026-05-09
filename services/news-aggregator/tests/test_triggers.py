@@ -307,3 +307,21 @@ def test_malware_campaign_infects_verb():
     text = "fake claude ai site infects users with new beagle malware"
     match = detect_trigger(text)
     assert match is not None and match.trigger == "malware_campaign"
+
+
+def test_breach_scale_comma_separated_people():
+    text = "zara data breach exposed personal information of 197,000 people"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "confirmed_breach"
+
+
+def test_breach_scale_comma_separated_schools():
+    text = "instructure data breach may have impacted 9,000 schools across the us"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "confirmed_breach"
+
+
+def test_breach_scale_comma_no_breach_verb_no_trigger():
+    text = "annual report shows growth at 197,000 customers across regions"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "confirmed_breach"
