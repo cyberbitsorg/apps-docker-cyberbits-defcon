@@ -94,8 +94,7 @@ _APT_VERB = re.compile(
 )
 
 _SCOPE_AMPLIFIER_PATTERNS = [
-    r"\ball\s+major\s+\w+",
-    r"\bmost\s+major\s+\w+",
+    r"\b(all|most)\s+major\s+(linux|windows|macos|android|ios|distros?|distributions?|systems?|platforms?|versions?|releases?)\b",
     r"\bevery\s+(version|release)\b",
     r"\bbillions?\s+of\s+(devices|users)\b",
     r"\bany\s+(linux|windows|macos|android|ios)\b",
