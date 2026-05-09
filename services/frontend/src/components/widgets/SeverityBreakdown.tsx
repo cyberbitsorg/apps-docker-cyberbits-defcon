@@ -17,13 +17,12 @@ const SEVERITY_LEVELS = [
 ];
 
 export function SeverityBreakdown({ articles, activeSeverity, onSeverityClick }: SeverityBreakdownProps) {
-  const scored = articles.filter((a) => a.defcon_score > 0);
-  const total = scored.length;
+  const total = articles.length;
 
   const counts = SEVERITY_LEVELS.map(({ defcon }) => ({
     defcon,
     ...DEFCON_LEVELS[defcon],
-    count: scored.filter((a) => scoreToLevel(a.defcon_score) === defcon).length,
+    count: articles.filter((a) => scoreToLevel(a.defcon_score) === defcon).length,
   }));
 
   return (

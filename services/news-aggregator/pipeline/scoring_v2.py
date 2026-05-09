@@ -2,7 +2,7 @@
 DEFCON Scoring v2 — decisive paths + capped stacking.
 
 Per-article: max(track_a, track_b), capped 100. Track A = trigger base + Track B bonus
-capped at 20. Track B = sum of CVE/impact/keyword dimensions, capped at 75.
+capped at 10. Track B = sum of CVE/impact/keyword dimensions, capped at 80.
 
 Global: weighted-max of article scores in last 24h, plus volume bonus, plus sticky
 displayed-level state machine.
@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from pipeline.vocabulary import TIER1, TIER2, TIER3, WB_REQUIRED
-from pipeline.triggers import detect_trigger, TRIGGER_BASE, TriggerType
+from pipeline.triggers import detect_trigger, TRIGGER_BASE, TriggerType, _has_scope_amplifier, _is_newsletter_title
 
 
 # --- shared signal helpers (v2) ---
@@ -25,8 +25,13 @@ _SEVERITY_WORDS = {"critical": 9.0, "high": 7.0, "medium": 5.0, "low": 2.5}
 
 def _extract_cvss_v2(text: str) -> float:
     """
-    Best CVSS score (0-10). Severity-word fallback only fires when text also
-    contains a CVE id. Kills the 'critical for SOC teams' false positives.
+    Best CVSS score (0-10).
+
+    1. Explicit "cvss <number>" within 50-char window wins.
+    2. Otherwise, severity word + CVE id co-occurrence maps to a default score.
+    3. Otherwise, prose-described vulnerability with strong scope/qualifier
+       infers a score (mirrors how a human reads severity from a feed summary
+       that omits CVSS). Returns 0.0 if none apply.
     """
     scores = []
     for context_match in re.finditer(r"cvss[^\n]{0,50}", text, re.IGNORECASE):
@@ -43,7 +48,20 @@ def _extract_cvss_v2(text: str) -> float:
     if _CVE_ID_RE.search(text):
         matching = [score for word, score in _SEVERITY_WORDS.items()
                     if re.search(rf"\b{word}\b", text, re.IGNORECASE)]
-        return max(matching) if matching else 0.0
+        if matching:
+            return max(matching)
+
+    # Tertiary: prose-described vulnerabilities with strong scope/qualifier.
+    has_scope = _has_scope_amplifier(text)
+    if re.search(r"\bzero[- ]?day\b", text, re.IGNORECASE) and has_scope:
+        return 8.0
+    if re.search(r"\b(remote code execution|RCE)\b", text, re.IGNORECASE) and (
+        re.search(r"\bunauthenticated\b", text, re.IGNORECASE) or has_scope
+    ):
+        return 8.0
+    if re.search(r"\b(root|kernel)\b", text, re.IGNORECASE) and has_scope:
+        return 7.5
+
     return 0.0
 
 
@@ -65,6 +83,12 @@ def _extract_impact_raw_v2(text: str) -> int:
         raw += 3
     if re.search(r"\b(all|most)\s+(major|popular|common)\s+(linux|windows|macos|android|ios|mobile\s+)?(distributions?|versions?|systems?|platforms?|devices?|distros?)\b", text, re.IGNORECASE):
         raw += 3
+    if re.search(r"\bbillions?\s+of\s+(devices|users)\b", text, re.IGNORECASE):
+        raw += 5
+    if re.search(r"\bevery\s+(version|release)\b", text, re.IGNORECASE):
+        raw += 4
+    if re.search(r"\bany\s+(linux|windows|macos|android|ios)\s+(system|device|user)\b", text, re.IGNORECASE):
+        raw += 4
     return raw
 
 
@@ -95,8 +119,8 @@ def _extract_keyword_score_normalized(text: str) -> float:
     Length-normalized keyword score, scaled to 0-25.
 
     Density = raw / max(1.0, log2(token_count + 1)). A typical 400-token article
-    with raw ≈ 26 saturates near 25 (log2(401) ≈ 8.65, density ≈ 3.0, score ≈ 25).
-    Long boilerplate no longer wins.
+    with raw ≈ 52 saturates near 25 (log2(401) ≈ 8.65, density ≈ 6.0 → cap 2.0 → score ≈ 25).
+    Long boilerplate no longer wins. Density cap reduced to 2.0 for tighter keyword control.
     """
     raw = _extract_keyword_raw(text)
     if raw == 0:
@@ -104,8 +128,8 @@ def _extract_keyword_score_normalized(text: str) -> float:
     token_count = max(1, len(text.split()))
     denom = max(1.0, math.log2(token_count + 1))
     density = raw / denom
-    # cap density at ~3.0 (calibrated so dense critical articles reach 25)
-    DENSITY_CAP = 3.0
+    # cap density at ~2.0 (calibrated so dense critical articles reach 25)
+    DENSITY_CAP = 2.0
     return min(density / DENSITY_CAP, 1.0) * 25.0
 
 
@@ -114,7 +138,7 @@ class ArticleScore:
     score: float
     trigger: Optional[TriggerType]
     track_a: float  # Track A score (0 if no trigger)
-    track_b: float  # Track B final (capped at 75)
+    track_b: float  # Track B final (capped at 80)
 
 
 def _compute_track_b_unclamped(text: str) -> tuple[float, float, float]:
@@ -135,19 +159,23 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
 
     # Title keyword bonus — additive to Track B total so it stacks with body keywords
     # rather than being capped inside the keyword dimension (max 25).
+    # Boost cap increased from 12 to 20 for stronger title emphasis.
     title_kw_raw = _extract_keyword_raw(title.lower())
-    title_kw_boost = min(title_kw_raw / 8.0, 1.0) * 12.0
+    title_kw_boost = min(title_kw_raw / 8.0, 1.0) * 20.0
 
     track_b_unclamped = cve + impact + kw + title_kw_boost
-    track_b_final = min(track_b_unclamped, 75.0)
+    track_b_final = min(track_b_unclamped, 80.0)
 
     trigger_match = detect_trigger(text)
+    if trigger_match is not None and _is_newsletter_title(title):
+        trigger_match = None
     if trigger_match is not None:
         base = TRIGGER_BASE[trigger_match.trigger]
-        bonus = min(track_b_unclamped, 20.0)
+        bonus = min(track_b_unclamped, 10.0)
         track_a = min(base + bonus, 100.0)
-        # track_a >= track_b_final when any trigger fires (base >= 75, cap <= 75);
-        # max() guards against future TRIGGER_BASE changes.
+        # With bonus cap 10: malware_campaign max = 60+10 = 70, kev_addition max = 75+10 = 85,
+        # active_exploitation max = 80+10 = 90 (before 100 clamp). Track B can still reach 80,
+        # so max() is load-bearing when Track B exceeds Track A (e.g. rich body, no trigger base).
         final = max(track_a, track_b_final)
         return ArticleScore(
             score=round(final, 2),

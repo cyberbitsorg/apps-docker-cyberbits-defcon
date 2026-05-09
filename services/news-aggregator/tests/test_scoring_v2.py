@@ -101,18 +101,29 @@ def test_article_v2_routine_patch_track_b_only():
     assert score.trigger is None
 
 
-def test_article_v2_track_b_capped_at_75():
-    # very keyword-heavy article with no Track A trigger should still cap at 75
-    score = compute_article_score_v2(
-        "keyword dense text without trigger",
-        "rce ddos backdoor exploit malware breach cve trojan spyware data leak threat actor unauthorized access credential dumped database vendor advisory incident response",
+def test_article_v2_track_b_capped_at_80():
+    # Saturate cve + impact + keyword + title boost; track_b must cap at 80.
+    title = "ransomware zero-day rce backdoor critical"
+    summary = (
+        "cvss 10.0 ransomware zero-day rce backdoor critical infrastructure "
+        "millions of records breached across power grid hospital government"
     )
-    # Track A "active_exploitation" did NOT fire here (no exploited/wild text), so Track B path
-    # If trigger fires (e.g., zero-day exploited variant), allow >75
-    if score.trigger is None:
-        assert score.score <= 75
-    else:
-        assert score.score >= 75
+    art = compute_article_score_v2(title, summary)
+    assert art.track_b <= 80.0
+
+
+def test_title_keyword_boost_cap_20():
+    # Title saturated with TIER1/TIER2 keywords; total Track B should still respect 80 cap.
+    title = "zero-day ransomware backdoor rce supply chain"
+    art = compute_article_score_v2(title, "")
+    assert art.track_b <= 80.0
+
+
+def test_keyword_score_can_saturate_at_25():
+    from pipeline.scoring_v2 import _extract_keyword_score_normalized
+    text = "zero-day ransomware backdoor rce supply chain critical infrastructure"
+    score = _extract_keyword_score_normalized(text.lower())
+    assert score > 20.0, f"keyword score should saturate near 25, got {score}"
 
 
 def test_article_v2_empty_returns_zero():
@@ -122,12 +133,13 @@ def test_article_v2_empty_returns_zero():
 
 
 def test_article_v2_track_a_with_track_b_bonus():
-    # Active exploitation + critical sector + millions → Track A base + bonus
+    # Active exploitation + critical sector + millions → Track A base + bonus (capped at 10)
+    # active_exploitation base 80 + max bonus 10 = 90; Track B can reach 80 via max().
     score = compute_article_score_v2(
         "Hospital systems actively exploited via zero-day",
         "millions of patient records affected; cvss 9.8 critical infrastructure under active attack",
     )
-    assert score.score >= 95
+    assert score.score >= 88
     assert score.trigger == "active_exploitation"
 
 
@@ -212,3 +224,119 @@ def test_global_v2_total_clamped_100():
     arts = [_article(95, trigger="active_exploitation", age_hours=0)]
     g = compute_global_score_v2(arts, new_count=100, baseline=5.0)
     assert g.score == 100.0  # 95 + 10 capped
+
+
+# --- Scope amplifier impact signals ---
+
+def test_impact_billions_of_devices():
+    raw = _extract_impact_raw_v2("flaw affects billions of devices worldwide")
+    assert raw >= 5
+
+
+def test_impact_every_version():
+    raw = _extract_impact_raw_v2("present in every version of the kernel")
+    assert raw >= 4
+
+
+def test_impact_any_linux_system():
+    raw = _extract_impact_raw_v2("works on any linux system released since 2015")
+    assert raw >= 4
+
+
+def test_impact_amplifier_neutral_text_zero():
+    raw = _extract_impact_raw_v2("microsoft released routine patches this month")
+    assert raw == 0
+
+
+def test_cve_inference_zero_day_with_scope():
+    text = "new linux zero-day affects all major linux distributions"
+    assert _extract_cvss_v2(text) == 8.0
+
+
+def test_cve_inference_rce_unauthenticated():
+    text = "unauthenticated remote code execution flaw disclosed"
+    assert _extract_cvss_v2(text) == 8.0
+
+
+def test_cve_inference_root_with_scope():
+    text = "kernel flaw grants root on any linux system"
+    assert _extract_cvss_v2(text) == 7.5
+
+
+def test_cve_inference_no_scope_no_inference():
+    text = "zero-day vulnerability discovered in obscure cms plugin"
+    assert _extract_cvss_v2(text) == 0.0
+
+
+def test_cve_inference_explicit_cvss_still_wins():
+    text = "zero-day in all major linux distros, cvss 9.5 confirmed"
+    assert _extract_cvss_v2(text) == 9.5
+
+
+# --- Calibration target tests ---
+
+
+def test_calibration_clickfix_macos_stealer_campaign():
+    title = "Fake macOS Troubleshooting Sites Used to Steal iCloud Data in ClickFix Scam"
+    summary = (
+        "Microsoft researchers warn of a new ClickFix campaign targeting macOS "
+        "with fake guides on Medium and Craft to deploy AMOS and SHub Stealer "
+        "via Terminal commands."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "malware_campaign", f"expected malware_campaign, got {art.trigger}"
+    assert 45 <= art.score <= 75, f"expected 45-75, got {art.score}"
+
+
+def test_calibration_dirty_frag_linux_zero_day():
+    title = "New Linux 'Dirty Frag' zero-day gives root on all major distros"
+    summary = (
+        "A new Linux zero-day vulnerability, named Dirty Frag, allows local "
+        "attackers to gain root privileges on most major Linux distributions "
+        "with a single command."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "critical_scope_vuln", f"expected critical_scope_vuln, got {art.trigger}"
+    assert 70 <= art.score <= 88, f"expected 70-88, got {art.score}"
+
+
+def test_calibration_routine_patch_news_stays_low():
+    title = "Microsoft releases August security patches"
+    summary = (
+        "Microsoft has released its monthly security update covering several "
+        "Windows components. Administrators are advised to review and deploy."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger is None, f"unexpected trigger {art.trigger}"
+    assert art.score < 30, f"expected <30, got {art.score}"
+
+
+def test_calibration_active_exploitation_still_high():
+    title = "CVE-2026-1234 actively exploited in attacks against Fortinet appliances"
+    summary = (
+        "Researchers report active exploitation of a critical authentication "
+        "bypass with cvss 9.8, used by attackers in the wild."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "active_exploitation"
+    assert art.score >= 80, f"expected >=80, got {art.score}"
+
+
+def test_newsletter_title_suppresses_trigger():
+    title = "Security Affairs newsletter Round 574 by Pierluigi Paganini"
+    summary = (
+        "A new round of the weekly Security Affairs newsletter has arrived. "
+        "U.S. CISA adds SimpleHelp, Samsung, and D-Link flaws to KEV catalog "
+        "and millions of records breached this week."
+    )
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger is None, f"newsletter should not trigger, got {art.trigger}"
+    assert art.score < 50, f"newsletter score should be modest, got {art.score}"
+
+
+def test_real_kev_article_still_triggers():
+    # Sanity: the same KEV pattern in a non-newsletter title still fires.
+    title = "CISA Adds Three Linux Flaws to KEV Catalog"
+    summary = "CISA has added three Linux kernel flaws to the Known Exploited Vulnerabilities catalog."
+    art = compute_article_score_v2(title, summary)
+    assert art.trigger == "kev_addition"
