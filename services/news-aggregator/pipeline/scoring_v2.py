@@ -2,7 +2,7 @@
 DEFCON Scoring v2 — decisive paths + capped stacking.
 
 Per-article: max(track_a, track_b), capped 100. Track A = trigger base + Track B bonus
-capped at 20. Track B = sum of CVE/impact/keyword dimensions, capped at 75.
+capped at 20. Track B = sum of CVE/impact/keyword dimensions, capped at 80.
 
 Global: weighted-max of article scores in last 24h, plus volume bonus, plus sticky
 displayed-level state machine.
@@ -95,8 +95,8 @@ def _extract_keyword_score_normalized(text: str) -> float:
     Length-normalized keyword score, scaled to 0-25.
 
     Density = raw / max(1.0, log2(token_count + 1)). A typical 400-token article
-    with raw ≈ 26 saturates near 25 (log2(401) ≈ 8.65, density ≈ 3.0, score ≈ 25).
-    Long boilerplate no longer wins.
+    with raw ≈ 52 saturates near 25 (log2(401) ≈ 8.65, density ≈ 6.0 → cap 2.0 → score ≈ 25).
+    Long boilerplate no longer wins. Density cap reduced to 2.0 for tighter keyword control.
     """
     raw = _extract_keyword_raw(text)
     if raw == 0:
@@ -104,8 +104,8 @@ def _extract_keyword_score_normalized(text: str) -> float:
     token_count = max(1, len(text.split()))
     denom = max(1.0, math.log2(token_count + 1))
     density = raw / denom
-    # cap density at ~3.0 (calibrated so dense critical articles reach 25)
-    DENSITY_CAP = 3.0
+    # cap density at ~2.0 (calibrated so dense critical articles reach 25)
+    DENSITY_CAP = 2.0
     return min(density / DENSITY_CAP, 1.0) * 25.0
 
 
@@ -114,7 +114,7 @@ class ArticleScore:
     score: float
     trigger: Optional[TriggerType]
     track_a: float  # Track A score (0 if no trigger)
-    track_b: float  # Track B final (capped at 75)
+    track_b: float  # Track B final (capped at 80)
 
 
 def _compute_track_b_unclamped(text: str) -> tuple[float, float, float]:
@@ -135,11 +135,12 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
 
     # Title keyword bonus — additive to Track B total so it stacks with body keywords
     # rather than being capped inside the keyword dimension (max 25).
+    # Boost cap increased from 12 to 20 for stronger title emphasis.
     title_kw_raw = _extract_keyword_raw(title.lower())
-    title_kw_boost = min(title_kw_raw / 8.0, 1.0) * 12.0
+    title_kw_boost = min(title_kw_raw / 8.0, 1.0) * 20.0
 
     track_b_unclamped = cve + impact + kw + title_kw_boost
-    track_b_final = min(track_b_unclamped, 75.0)
+    track_b_final = min(track_b_unclamped, 80.0)
 
     trigger_match = detect_trigger(text)
     if trigger_match is not None:

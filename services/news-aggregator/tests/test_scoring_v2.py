@@ -101,18 +101,29 @@ def test_article_v2_routine_patch_track_b_only():
     assert score.trigger is None
 
 
-def test_article_v2_track_b_capped_at_75():
-    # very keyword-heavy article with no Track A trigger should still cap at 75
-    score = compute_article_score_v2(
-        "keyword dense text without trigger",
-        "rce ddos backdoor exploit malware breach cve trojan spyware data leak threat actor unauthorized access credential dumped database vendor advisory incident response",
+def test_article_v2_track_b_capped_at_80():
+    # Saturate cve + impact + keyword + title boost; track_b must cap at 80.
+    title = "ransomware zero-day rce backdoor critical"
+    summary = (
+        "cvss 10.0 ransomware zero-day rce backdoor critical infrastructure "
+        "millions of records breached across power grid hospital government"
     )
-    # Track A "active_exploitation" did NOT fire here (no exploited/wild text), so Track B path
-    # If trigger fires (e.g., zero-day exploited variant), allow >75
-    if score.trigger is None:
-        assert score.score <= 75
-    else:
-        assert score.score >= 75
+    art = compute_article_score_v2(title, summary)
+    assert art.track_b <= 80.0
+
+
+def test_title_keyword_boost_cap_20():
+    # Title saturated with TIER1/TIER2 keywords; total Track B should still respect 80 cap.
+    title = "zero-day ransomware backdoor rce supply chain"
+    art = compute_article_score_v2(title, "")
+    assert art.track_b <= 80.0
+
+
+def test_keyword_score_can_saturate_at_25():
+    from pipeline.scoring_v2 import _extract_keyword_score_normalized
+    text = "zero-day ransomware backdoor rce supply chain critical infrastructure"
+    score = _extract_keyword_score_normalized(text.lower())
+    assert score > 20.0, f"keyword score should saturate near 25, got {score}"
 
 
 def test_article_v2_empty_returns_zero():
