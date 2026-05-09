@@ -223,3 +223,25 @@ def test_global_v2_total_clamped_100():
     arts = [_article(95, trigger="active_exploitation", age_hours=0)]
     g = compute_global_score_v2(arts, new_count=100, baseline=5.0)
     assert g.score == 100.0  # 95 + 10 capped
+
+
+# --- Scope amplifier impact signals ---
+
+def test_impact_billions_of_devices():
+    raw = _extract_impact_raw_v2("flaw affects billions of devices worldwide")
+    assert raw >= 5
+
+
+def test_impact_every_version():
+    raw = _extract_impact_raw_v2("present in every version of the kernel")
+    assert raw >= 4
+
+
+def test_impact_any_linux_system():
+    raw = _extract_impact_raw_v2("works on any linux system released since 2015")
+    assert raw >= 4
+
+
+def test_impact_amplifier_neutral_text_zero():
+    raw = _extract_impact_raw_v2("microsoft released routine patches this month")
+    assert raw == 0

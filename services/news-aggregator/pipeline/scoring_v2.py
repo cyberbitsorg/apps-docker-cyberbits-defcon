@@ -65,6 +65,12 @@ def _extract_impact_raw_v2(text: str) -> int:
         raw += 3
     if re.search(r"\b(all|most)\s+(major|popular|common)\s+(linux|windows|macos|android|ios|mobile\s+)?(distributions?|versions?|systems?|platforms?|devices?|distros?)\b", text, re.IGNORECASE):
         raw += 3
+    if re.search(r"\bbillions?\s+of\s+(devices|users)\b", text, re.IGNORECASE):
+        raw += 5
+    if re.search(r"\bevery\s+(version|release)\b", text, re.IGNORECASE):
+        raw += 4
+    if re.search(r"\bany\s+(linux|windows|macos|android|ios)\s+(system|device|user)\b", text, re.IGNORECASE):
+        raw += 4
     return raw
 
 
