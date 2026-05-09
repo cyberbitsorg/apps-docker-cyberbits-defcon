@@ -1,4 +1,4 @@
-from pipeline.triggers import detect_trigger, TRIGGER_BASE
+from pipeline.triggers import detect_trigger, TRIGGER_BASE, _has_scope_amplifier
 
 
 def test_active_exploitation_actively_exploited():
@@ -87,3 +87,27 @@ def test_trigger_base_scores():
     assert TRIGGER_BASE["confirmed_breach"] == 80
     assert TRIGGER_BASE["kev_addition"] == 80
     assert TRIGGER_BASE["apt_campaign"] == 75
+
+
+def test_scope_amplifier_all_major_distros():
+    assert _has_scope_amplifier("vulnerability affects all major linux distributions")
+
+
+def test_scope_amplifier_billions_of_devices():
+    assert _has_scope_amplifier("flaw affects billions of devices worldwide")
+
+
+def test_scope_amplifier_every_version():
+    assert _has_scope_amplifier("present in every version of the kernel")
+
+
+def test_scope_amplifier_any_linux():
+    assert _has_scope_amplifier("works on any linux system")
+
+
+def test_scope_amplifier_negative_routine():
+    assert not _has_scope_amplifier("affects some windows servers running specific software")
+
+
+def test_scope_amplifier_negative_single_product():
+    assert not _has_scope_amplifier("vulnerability in cisco asa firewall")

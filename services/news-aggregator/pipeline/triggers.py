@@ -86,6 +86,20 @@ _APT_VERB = re.compile(
     re.IGNORECASE,
 )
 
+_SCOPE_AMPLIFIER_PATTERNS = [
+    r"\ball\s+major\s+(linux|windows|macos|android|ios)",
+    r"\bevery\s+(version|release)\b",
+    r"\bbillions?\s+of\s+(devices|users)\b",
+    r"\bany\s+(linux|windows|macos|android|ios)\b",
+]
+
+_SCOPE_AMPLIFIER_RE = re.compile("|".join(_SCOPE_AMPLIFIER_PATTERNS), re.IGNORECASE)
+
+
+def _has_scope_amplifier(text: str) -> bool:
+    """True if text describes broad-scope impact (entire OS family, billions of users, etc.)."""
+    return _SCOPE_AMPLIFIER_RE.search(text) is not None
+
 
 # --- detection helpers (each returns matched substring or None) ---
 
