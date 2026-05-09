@@ -134,11 +134,29 @@ def _is_newsletter_title(title: str) -> bool:
 
 # --- detection helpers (each returns matched substring or None) ---
 
+_NEGATION_WORDS_RE = re.compile(
+    r"\b(no|never|not|without|unsuccessful|fails?|failed|prevent(?:ed|s)?|denied|blocked)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_negated(text: str, match_start: int, match_end: int = -1) -> bool:
+    """True if the 30 chars preceding match_start (or 60 chars after match_end) contain a negation marker."""
+    window_start = max(0, match_start - 30)
+    if _NEGATION_WORDS_RE.search(text[window_start:match_start]) is not None:
+        return True
+    if match_end >= 0:
+        window_end = min(len(text), match_end + 60)
+        if _NEGATION_WORDS_RE.search(text[match_end:window_end]) is not None:
+            return True
+    return False
+
+
 def _match_active_exploitation(text: str) -> Optional[str]:
     for pattern in _ACTIVE_EXPLOITATION_PATTERNS:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            return m.group(0)
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            if not _is_negated(text, m.start(), m.end()):
+                return m.group(0)
     return None
 
 

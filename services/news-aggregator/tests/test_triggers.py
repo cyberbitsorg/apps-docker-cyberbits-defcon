@@ -268,3 +268,36 @@ def test_is_newsletter_title_weekly_roundup():
 
 def test_is_newsletter_title_negative():
     assert not _is_newsletter_title("CISA Adds Three Linux Flaws to KEV Catalog")
+
+
+def test_active_exploitation_negated_never_exploited():
+    text = "critical crowdstrike logscale bug, the flaw was never exploited in the wild"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "active_exploitation"
+
+
+def test_active_exploitation_negated_no_exploitation():
+    text = "critical flaw disclosed, but no exploitation was observed"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "active_exploitation"
+
+
+def test_active_exploitation_negated_unsuccessful():
+    text = "cve-2023-33538 under attack for a year, but exploitation still unsuccessful"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "active_exploitation"
+
+
+def test_active_exploitation_positive_unchanged():
+    # Sanity: actually-exploited articles still trigger
+    text = "ivanti vulnerability actively exploited in attacks against enterprises"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_active_exploitation_negation_does_not_apply_to_distant_match():
+    # If "no" appears 100 chars before, it should NOT suppress
+    text = ("no problems were reported with last quarter's deployment process. "
+            "however a separate critical flaw is now actively exploited in the wild")
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
