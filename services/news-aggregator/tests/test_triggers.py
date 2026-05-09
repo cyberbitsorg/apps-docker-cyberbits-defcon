@@ -325,3 +325,18 @@ def test_breach_scale_comma_no_breach_verb_no_trigger():
     text = "annual report shows growth at 197,000 customers across regions"
     match = detect_trigger(text)
     assert match is None or match.trigger != "confirmed_breach"
+
+
+def test_critical_sector_rail_triggers_path():
+    # Taiwan High-Speed Rail Emergency Braking Hack — railway is critical infra
+    text = "taiwan high-speed rail emergency braking hack stops trains across country"
+    # apt or breach trigger may fire depending on verb. Just confirm SOMETHING fires
+    # via the critical sector path.
+    from pipeline.triggers import _CRITICAL_SECTOR_RE
+    assert _CRITICAL_SECTOR_RE.search(text) is not None
+
+
+def test_critical_sector_schools_in_breach():
+    text = "data breach may have impacted thousands of schools nationwide"
+    from pipeline.triggers import _CRITICAL_SECTOR_RE
+    assert _CRITICAL_SECTOR_RE.search(text) is not None

@@ -51,6 +51,9 @@ CRITICAL_SECTORS = [
     "power grid", "hospital", "water treatment", "government", "military",
     "critical infrastructure", "airline", "bank", "financial",
     "university", "universities", "college", "colleges", "educational",
+    "rail", "railway", "metro", "transit", "subway",
+    "school", "schools", "k-12",
+    "hospital system", "health system", "healthcare",
 ]
 
 # Known infostealer/RAT family names — used by malware_campaign trigger only.
