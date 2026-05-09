@@ -2,6 +2,7 @@ from pipeline.vocabulary import (
     TIER1, TIER2, TIER3,
     THREAT_ACTORS,
     CRITICAL_SECTORS,
+    KNOWN_STEALERS,
     WB_REQUIRED,
 )
 
@@ -38,3 +39,37 @@ def test_wb_required_includes_short_ambiguous_terms():
 def test_zero_day_not_in_tier3():
     assert "zero-day" not in TIER3
     assert "zero day" not in TIER3
+
+
+def test_tier1_has_v21_additions():
+    for kw in ("infostealer", "stealer campaign", "malware campaign"):
+        assert kw in TIER1, f"TIER1 missing {kw!r}"
+
+
+def test_tier2_has_v21_additions():
+    expected = {
+        "stealer", "info-stealer", "credential theft", "credential harvesting",
+        "clickfix", "loader", "dropper", "keylogger", "rat",
+    }
+    missing = expected - set(TIER2)
+    assert not missing, f"TIER2 missing {missing}"
+
+
+def test_tier3_has_v21_additions():
+    for kw in ("campaign", "targeting", "payload"):
+        assert kw in TIER3, f"TIER3 missing {kw!r}"
+
+
+def test_known_stealers_lowercase():
+    assert KNOWN_STEALERS, "KNOWN_STEALERS empty"
+    for name in KNOWN_STEALERS:
+        assert name == name.lower(), f"{name!r} not lowercase"
+
+
+def test_known_stealers_includes_common_families():
+    for name in ("amos", "redline", "lumma", "vidar", "stealc"):
+        assert name in KNOWN_STEALERS, f"{name!r} missing"
+
+
+def test_wb_required_includes_rat():
+    assert "rat" in WB_REQUIRED
