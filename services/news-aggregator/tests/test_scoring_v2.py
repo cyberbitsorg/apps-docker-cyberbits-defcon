@@ -245,3 +245,28 @@ def test_impact_any_linux_system():
 def test_impact_amplifier_neutral_text_zero():
     raw = _extract_impact_raw_v2("microsoft released routine patches this month")
     assert raw == 0
+
+
+def test_cve_inference_zero_day_with_scope():
+    text = "new linux zero-day affects all major linux distributions"
+    assert _extract_cvss_v2(text) == 8.0
+
+
+def test_cve_inference_rce_unauthenticated():
+    text = "unauthenticated remote code execution flaw disclosed"
+    assert _extract_cvss_v2(text) == 8.0
+
+
+def test_cve_inference_root_with_scope():
+    text = "kernel flaw grants root on any linux system"
+    assert _extract_cvss_v2(text) == 7.5
+
+
+def test_cve_inference_no_scope_no_inference():
+    text = "zero-day vulnerability discovered in obscure cms plugin"
+    assert _extract_cvss_v2(text) == 0.0
+
+
+def test_cve_inference_explicit_cvss_still_wins():
+    text = "zero-day in all major linux distros, cvss 9.5 confirmed"
+    assert _extract_cvss_v2(text) == 9.5

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from pipeline.vocabulary import TIER1, TIER2, TIER3, WB_REQUIRED
-from pipeline.triggers import detect_trigger, TRIGGER_BASE, TriggerType
+from pipeline.triggers import detect_trigger, TRIGGER_BASE, TriggerType, _has_scope_amplifier
 
 
 # --- shared signal helpers (v2) ---
@@ -25,8 +25,13 @@ _SEVERITY_WORDS = {"critical": 9.0, "high": 7.0, "medium": 5.0, "low": 2.5}
 
 def _extract_cvss_v2(text: str) -> float:
     """
-    Best CVSS score (0-10). Severity-word fallback only fires when text also
-    contains a CVE id. Kills the 'critical for SOC teams' false positives.
+    Best CVSS score (0-10).
+
+    1. Explicit "cvss <number>" within 50-char window wins.
+    2. Otherwise, severity word + CVE id co-occurrence maps to a default score.
+    3. Otherwise, prose-described vulnerability with strong scope/qualifier
+       infers a score (mirrors how a human reads severity from a feed summary
+       that omits CVSS). Returns 0.0 if none apply.
     """
     scores = []
     for context_match in re.finditer(r"cvss[^\n]{0,50}", text, re.IGNORECASE):
@@ -43,7 +48,20 @@ def _extract_cvss_v2(text: str) -> float:
     if _CVE_ID_RE.search(text):
         matching = [score for word, score in _SEVERITY_WORDS.items()
                     if re.search(rf"\b{word}\b", text, re.IGNORECASE)]
-        return max(matching) if matching else 0.0
+        if matching:
+            return max(matching)
+
+    # Tertiary: prose-described vulnerabilities with strong scope/qualifier.
+    has_scope = _has_scope_amplifier(text)
+    if re.search(r"\bzero[- ]?day\b", text, re.IGNORECASE) and has_scope:
+        return 8.0
+    if re.search(r"\b(remote code execution|RCE)\b", text, re.IGNORECASE) and (
+        re.search(r"\bunauthenticated\b", text, re.IGNORECASE) or has_scope
+    ):
+        return 8.0
+    if re.search(r"\b(root|kernel)\b", text, re.IGNORECASE) and has_scope:
+        return 7.5
+
     return 0.0
 
 
