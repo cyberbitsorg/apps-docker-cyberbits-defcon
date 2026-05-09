@@ -340,3 +340,27 @@ def test_critical_sector_schools_in_breach():
     text = "data breach may have impacted thousands of schools nationwide"
     from pipeline.triggers import _CRITICAL_SECTOR_RE
     assert _CRITICAL_SECTOR_RE.search(text) is not None
+
+
+def test_active_exploitation_cashing_in():
+    text = "attackers are cashing in on fresh copyfail linux flaw exploited via stack overflow"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_active_exploitation_wave_of_attacks():
+    text = "wave of attacks targeting unpatched fortinet vpn appliances reported"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_active_exploitation_in_active_use():
+    text = "rce flaw is in active use by attackers across multiple regions"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "active_exploitation"
+
+
+def test_no_false_positive_cashing_in_business():
+    text = "tech firm cashing in on the booming AI sector this quarter"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "active_exploitation"

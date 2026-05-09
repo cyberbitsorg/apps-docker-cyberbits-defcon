@@ -63,6 +63,10 @@ _ACTIVE_EXPLOITATION_PATTERNS = [
     r"\bexploited\s+as\s+a?\s*(zero|0)[- ]?day\b",
     r"\bweaponized\b",
     r"\b(actively\s+)?exploiting\b",
+    r"\bcashing in on\s+(?:fresh|new|unpatched|critical)?\s*(?:\w+\s+){0,3}(flaw|bug|vuln|vulnerability|cve)",
+    r"\bwave of attacks?\b",
+    r"\bin active use\s+by\b",
+    r"\bpreying on\b",
 ]
 
 _KEV_PATTERNS = [
