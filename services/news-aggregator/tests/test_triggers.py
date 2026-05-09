@@ -364,3 +364,16 @@ def test_no_false_positive_cashing_in_business():
     text = "tech firm cashing in on the booming AI sector this quarter"
     match = detect_trigger(text)
     assert match is None or match.trigger != "active_exploitation"
+
+
+def test_breach_exposed_personal_information():
+    text = "zara breach exposed personal information of 197,000 people"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "confirmed_breach"
+
+
+def test_breach_exposed_alone_not_a_breach():
+    # `exposed AI services` should NOT fire breach
+    text = "we scanned 1 million exposed ai services in our research project"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "confirmed_breach"

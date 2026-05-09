@@ -78,6 +78,7 @@ _KEV_PATTERNS = [
 
 _BREACH_VERB = re.compile(
     r"\b(confirms? breach|breached|data breach|data leak|data dump|dump puts|leaked database|claims dump|"
+    r"exposed (personal information|data of|records of|user data|customer data|credentials|emails|accounts)|"
     r"(stolen|stole|theft of|claimed theft of|stealing) .{0,40}(records|users|emails|customers|accounts|tokens|credentials))\b",
     re.IGNORECASE,
 )
