@@ -1,13 +1,16 @@
 """
 Decisive trigger detection for DEFCON Track A scoring.
 
-A "trigger" is a high-confidence pattern that alone justifies a high DEFCON score:
+A "trigger" is a high-confidence pattern that alone justifies an elevated DEFCON score:
   - active_exploitation: vuln being exploited in the wild
+  - kev_addition: CISA KEV catalog update
+  - critical_scope_vuln: vuln keyword + broad scope amplifier
   - confirmed_breach: named/scaled data breach
   - apt_campaign: nation-state / named-actor campaign with target
-  - kev_addition: CISA KEV catalog update
+  - malware_campaign: stealer/loader/RAT or known stealer name + campaign verb
 
-Precedence: active_exploitation > kev_addition > confirmed_breach > apt_campaign.
+Precedence (highest first): active_exploitation > kev_addition > critical_scope_vuln
+  > confirmed_breach > apt_campaign > malware_campaign.
 """
 import re
 from dataclasses import dataclass

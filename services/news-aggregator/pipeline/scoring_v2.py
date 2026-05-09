@@ -171,8 +171,8 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
         base = TRIGGER_BASE[trigger_match.trigger]
         bonus = min(track_b_unclamped, 20.0)
         track_a = min(base + bonus, 100.0)
-        # track_a >= track_b_final when any trigger fires (base >= 75, cap <= 75);
-        # max() guards against future TRIGGER_BASE changes.
+        # malware_campaign at base 60 + bonus 20 = 80 ties Track B's 80 cap, so
+        # max() can be load-bearing — keep it explicit.
         final = max(track_a, track_b_final)
         return ArticleScore(
             score=round(final, 2),
