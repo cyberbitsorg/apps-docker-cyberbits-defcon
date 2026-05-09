@@ -194,6 +194,24 @@ def test_malware_campaign_no_false_positive_rat_substring():
     assert match is None or match.trigger != "malware_campaign"
 
 
+def test_breach_theft_of_records():
+    text = "shinyhunters claimed theft of 9m+ records from medtronic"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "confirmed_breach"
+
+
+def test_breach_stealing_auth_tokens():
+    text = "global campaign stealing auth tokens from 35k users"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "confirmed_breach"
+
+
+def test_breach_scale_with_plus_sign():
+    # The 9M+ pattern with trailing + must be detected as a numeric scale
+    from pipeline.triggers import _BREACH_SCALE_NUMERIC
+    assert _BREACH_SCALE_NUMERIC.search("dump of 9M+ records confirmed")
+
+
 def test_active_exploitation_exploits_cve():
     text = "mirai botnet exploits cve-2025-29635 to target legacy d-link routers"
     match = detect_trigger(text)
