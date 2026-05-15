@@ -60,19 +60,24 @@ _CVE_ID_RE = re.compile(r"\bCVE[-–— ]?(\d{4})[-–— ]?(\d{3,7})\b", re.IGN
 # other meaningful token, treat as duplicate. Tokens are matched lowercase, with
 # word boundaries — product names may contain spaces or hyphens.
 VENDOR_PRODUCT_PAIRS: tuple[tuple[str, str], ...] = (
+    # Specific products only — generic pairs like "microsoft windows" cause false
+    # positives because two unrelated MS-Windows articles always share both tokens.
     ("cisco", "sd-wan"), ("cisco", "ios"), ("cisco", "catalyst"), ("cisco", "asa"),
-    ("microsoft", "exchange"), ("microsoft", "sharepoint"), ("microsoft", "windows"),
+    ("microsoft", "exchange"), ("microsoft", "sharepoint"),
     ("microsoft", "azure"), ("microsoft", "outlook"), ("microsoft", "teams"),
-    ("apple", "ios"), ("apple", "macos"), ("apple", "safari"),
-    ("google", "chrome"), ("google", "android"),
-    ("fortinet", "fortigate"), ("fortinet", "fortios"), ("fortinet", "fortimanager"),
+    ("microsoft", "bitlocker"), ("microsoft", "defender"),
+    ("apple", "macos"), ("apple", "safari"),
+    ("google", "chrome"),
+    ("fortinet", "fortigate"), ("fortinet", "fortios"),
+    ("fortinet", "fortimanager"), ("fortinet", "fortisandbox"),
     ("ivanti", "epmm"), ("ivanti", "connect secure"), ("ivanti", "endpoint manager"),
     ("palo alto", "pan-os"), ("vmware", "esxi"), ("vmware", "vcenter"),
+    ("vmware", "fusion"),
     ("citrix", "netscaler"), ("citrix", "adc"),
     ("sonicwall", "sma"), ("sonicwall", "firewall"),
     ("oracle", "weblogic"), ("oracle", "java"),
     ("openssh", ""), ("openssl", ""), ("nginx", ""), ("apache", "struts"),
-    ("wordpress", ""), ("drupal", ""), ("git", ""), ("curl", ""),
+    ("wordpress", ""), ("drupal", ""),
 )
 
 
