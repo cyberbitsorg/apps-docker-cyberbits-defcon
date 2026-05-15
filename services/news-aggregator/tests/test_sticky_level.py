@@ -46,7 +46,7 @@ def test_severity_drops_starts_cooldown():
     result = compute_displayed_level(raw_level=4, state=state, now=now)
     assert result.displayed_level == 2  # held at floor
     assert result.new_floor == 2
-    assert result.new_until_at == now + timedelta(hours=6)
+    assert result.new_until_at == now + timedelta(hours=3)
 
 
 def test_during_cooldown_holds_floor():
@@ -73,7 +73,7 @@ def test_cooldown_expires_decrements_floor():
     assert result.displayed_level == 3  # stepped 2 → 3
     assert result.new_floor == 3
     # new floor (3) is still more severe than raw (4) → another cooldown chained
-    assert result.new_until_at == now + timedelta(hours=6)
+    assert result.new_until_at == now + timedelta(hours=3)
 
 
 def test_cooldown_expires_floor_meets_raw():

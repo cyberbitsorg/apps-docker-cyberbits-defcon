@@ -11,7 +11,7 @@ from db.sticky_level import read_sticky_state, write_sticky_state, compute_displ
 from pipeline.scoring_v2 import compute_global_score_v2
 from cache.redis_client import get_redis, publish_cache_invalidation
 from cache.volume import record_volume, get_volume_baseline
-from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, _shared_named_phrase, _shared_actor_and_token, JACCARD_THRESHOLD, RECENT_TITLES_KEY
+from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, _shared_named_phrase, _shared_actor_and_token, _shared_vendor_product, _extract_cves, JACCARD_THRESHOLD, RECENT_TITLES_KEY
 from pipeline.normalizer import normalize
 from pipeline.scorer import compute_global_score
 from feeds.bleeping_computer import BleepingComputerFeed
@@ -46,23 +46,39 @@ FEEDS = [
 scheduler = AsyncIOScheduler()
 
 
-def _within_batch_duplicate(title: str, seen_titles: list[str]) -> bool:
-    """Check if title is a duplicate of anything already accepted in this batch."""
-    if not seen_titles:
+def _within_batch_duplicate(
+    title: str,
+    summary: str,
+    seen: list[tuple[str, str]],
+) -> bool:
+    """Check if (title, summary) is a duplicate of anything already accepted in this batch."""
+    if not seen:
         return False
     new_tokens = _token_set(title)
-    for existing in seen_titles:
-        if _temporal_conflict(title, existing):
+    new_cves = _extract_cves(f"{title} {summary}")
+    for existing_title, existing_summary in seen:
+        if _temporal_conflict(title, existing_title):
             continue
-        if _shared_named_phrase(title, existing):
-            logger.info(f"[Dedup batch-L0a] Named phrase: '{title[:60]}' ≈ '{existing[:60]}'")
+        if new_cves and (new_cves & _extract_cves(f"{existing_title} {existing_summary}")):
+            shared = next(iter(new_cves & _extract_cves(f"{existing_title} {existing_summary}")))
+            logger.info(f"[Dedup batch-L1b] CVE {shared}: '{title[:60]}' ≈ '{existing_title[:60]}'")
             return True
-        if _shared_actor_and_token(title, existing):
-            logger.info(f"[Dedup batch-L0b] Threat actor: '{title[:60]}' ≈ '{existing[:60]}'")
+        if _shared_named_phrase(title, existing_title):
+            logger.info(f"[Dedup batch-L0a] Named phrase: '{title[:60]}' ≈ '{existing_title[:60]}'")
             return True
-        j = _jaccard(new_tokens, _token_set(existing))
+        if _shared_actor_and_token(title, existing_title):
+            logger.info(f"[Dedup batch-L0b] Threat actor: '{title[:60]}' ≈ '{existing_title[:60]}'")
+            return True
+        pair = _shared_vendor_product(title, existing_title)
+        if pair:
+            existing_tokens = _token_set(existing_title)
+            pair_tokens = frozenset(pair.split())
+            if (new_tokens - pair_tokens) & (existing_tokens - pair_tokens):
+                logger.info(f"[Dedup batch-L0c] Vendor+product '{pair}': '{title[:60]}' ≈ '{existing_title[:60]}'")
+                return True
+        j = _jaccard(new_tokens, _token_set(existing_title))
         if j >= JACCARD_THRESHOLD:
-            logger.info(f"[Dedup batch] Jaccard={j:.2f}: '{title[:60]}' ≈ '{existing[:60]}'")
+            logger.info(f"[Dedup batch] Jaccard={j:.2f}: '{title[:60]}' ≈ '{existing_title[:60]}'")
             return True
     return False
 
@@ -86,7 +102,7 @@ async def run_fetch_cycle():
     # --- Step 2: deduplicate and insert ---
     inserted = 0
     skipped = 0
-    batch_accepted_titles: list[str] = []  # titles accepted so far this cycle
+    batch_accepted: list[tuple[str, str]] = []  # (title, summary) accepted so far this cycle
 
     for raw in all_raw:
         if not raw.title or not raw.url:
@@ -95,13 +111,13 @@ async def run_fetch_cycle():
         fp = make_fingerprint(raw.title)
 
         # Within-batch dedup first (catches cross-feed duplicates before Redis state is updated)
-        if _within_batch_duplicate(raw.title, batch_accepted_titles):
+        if _within_batch_duplicate(raw.title, raw.summary or "", batch_accepted):
             skipped += 1
             await upsert_dedup_log(pool, fp, None)
             continue
 
         # Then check against Redis (previous cycles)
-        duplicate = await is_duplicate(raw.title, redis)
+        duplicate = await is_duplicate(raw.title, redis, summary=raw.summary or "")
         if duplicate:
             skipped += 1
             await upsert_dedup_log(pool, fp, None)
@@ -111,7 +127,7 @@ async def run_fetch_cycle():
         article_id = await upsert_article(pool, article)
         if article_id:
             await upsert_dedup_log(pool, fp, article_id)
-            batch_accepted_titles.append(raw.title)
+            batch_accepted.append((raw.title, raw.summary or ""))
             inserted += 1
         else:
             # guid already existed in DB
@@ -154,7 +170,12 @@ async def run_fetch_cycle():
         await insert_defcon_history_v1(pool, factors, len(recent))
         logger.info(f"Defcon v1 score: {factors.total:.1f} (level {factors.level} - {factors.label})")
 
-    await pool.execute("UPDATE last_refresh SET refreshed_at = NOW() WHERE id = 1")
+    await pool.execute(
+        """
+        INSERT INTO last_refresh (id, refreshed_at) VALUES (1, NOW())
+        ON CONFLICT (id) DO UPDATE SET refreshed_at = NOW()
+        """
+    )
     await publish_cache_invalidation()
 
 

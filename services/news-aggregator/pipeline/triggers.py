@@ -24,12 +24,12 @@ TriggerType = Literal[
 ]
 
 TRIGGER_BASE: dict[TriggerType, int] = {
-    "active_exploitation": 80,
-    "kev_addition": 75,
-    "critical_scope_vuln": 70,
-    "confirmed_breach": 70,
-    "apt_campaign": 65,
-    "malware_campaign": 60,
+    "active_exploitation": 70,
+    "kev_addition": 70,
+    "critical_scope_vuln": 65,
+    "confirmed_breach": 65,
+    "apt_campaign": 60,
+    "malware_campaign": 55,
 }
 
 # Precedence (highest first): when multiple triggers match, the first listed wins.
@@ -62,7 +62,11 @@ _ACTIVE_EXPLOITATION_PATTERNS = [
     r"\bexploits?\s+(cve|known|critical|vuln|flaw|bug|zero[- ]?day)",
     r"\bexploited\s+as\s+a?\s*(zero|0)[- ]?day\b",
     r"\bweaponized\b",
-    r"\b(actively\s+)?exploiting\b",
+    r"\bactively\s+exploiting\b",
+    # Bare "exploiting" must reference a vuln-like indicator within ~80 chars to avoid
+    # false positives like "exploiting human trust" / "exploiting confusion".
+    # Substring match (no word boundary on the indicator) so "unpatched" / "vulnerability" both qualify.
+    r"\bexploiting\b[^.\n]{0,80}(cve|flaw|bug|vuln|zero[- ]?day|0[- ]?day|rce|remote code execution|patch|advisory|exploit)",
     r"\bcashing in on\s+(?:fresh|new|unpatched|critical)?\s*(?:\w+\s+){0,3}(flaw|bug|vuln|vulnerability|cve)",
     r"\bwave of attacks?\b",
     r"\bin active use\s+by\b",
@@ -139,6 +143,19 @@ _NEWSLETTER_TITLE_RE = re.compile(
 def _is_newsletter_title(title: str) -> bool:
     """Aggregator-style titles (weekly newsletter, round-up) should not fire decisive triggers."""
     return _NEWSLETTER_TITLE_RE.search(title) is not None
+
+
+_CONTEST_RE = re.compile(
+    r"\bpwn2own\b|\bcapture[- ]the[- ]flag\b|\bctf\b|\bhack(?:athon|fest|the box)\b|"
+    r"\bbug bounty\b|\bdef ?con (?:ctf|village|finals?)\b|\bhackone\b|\bhackerone\b|"
+    r"\bzero day initiative\b|\bzdi\b",
+    re.IGNORECASE,
+)
+
+
+def _is_contest_context(text: str) -> bool:
+    """True if text describes a security contest / bug bounty (not real-world exploitation)."""
+    return _CONTEST_RE.search(text) is not None
 
 
 # --- detection helpers (each returns matched substring or None) ---
@@ -255,8 +272,16 @@ _DETECTORS = {
 
 
 def detect_trigger(text: str) -> Optional[TriggerMatch]:
-    """Return the highest-precedence trigger fired by this text, or None."""
+    """Return the highest-precedence trigger fired by this text, or None.
+
+    Contest/bug-bounty contexts (Pwn2Own, CTF, HackerOne) are excluded from
+    active_exploitation, kev_addition and critical_scope_vuln — their
+    'exploited' references describe controlled research, not in-the-wild attacks.
+    """
+    contest = _is_contest_context(text)
     for trigger in PRECEDENCE:
+        if contest and trigger in ("active_exploitation", "kev_addition", "critical_scope_vuln"):
+            continue
         matched = _DETECTORS[trigger](text)
         if matched:
             return TriggerMatch(trigger=trigger, matched_text=matched)

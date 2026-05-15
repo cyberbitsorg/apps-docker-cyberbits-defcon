@@ -79,7 +79,7 @@ def test_article_v2_palo_alto_zero_day():
         "Palo Alto firewall RCE zero-day exploited in attacks",
         "vendor confirms active exploitation in the wild against PAN-OS",
     )
-    assert score.score >= 85
+    assert score.score >= 75
     assert score.trigger == "active_exploitation"
 
 
@@ -88,7 +88,7 @@ def test_article_v2_breach_with_scale():
         "Hospital patient records breach confirmed",
         "vendor confirms breach affecting hospital systems with millions of records exposed",
     )
-    assert score.score >= 80
+    assert score.score >= 70
     assert score.trigger == "confirmed_breach"
 
 
@@ -134,12 +134,12 @@ def test_article_v2_empty_returns_zero():
 
 def test_article_v2_track_a_with_track_b_bonus():
     # Active exploitation + critical sector + millions → Track A base + bonus (capped at 10)
-    # active_exploitation base 80 + max bonus 10 = 90; Track B can reach 80 via max().
+    # active_exploitation base 70 + max bonus 10 = 80; Track B can reach 80 via max().
     score = compute_article_score_v2(
         "Hospital systems actively exploited via zero-day",
         "millions of patient records affected; cvss 9.8 critical infrastructure under active attack",
     )
-    assert score.score >= 88
+    assert score.score >= 78
     assert score.trigger == "active_exploitation"
 
 

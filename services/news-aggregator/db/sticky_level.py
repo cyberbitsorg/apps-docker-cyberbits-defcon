@@ -11,7 +11,7 @@ from typing import Optional
 
 import asyncpg
 
-COOLDOWN = timedelta(hours=6)
+COOLDOWN = timedelta(hours=3)
 
 
 def is_more_severe(level_a: int, level_b: int) -> bool:
@@ -101,11 +101,15 @@ async def read_sticky_state(pool: asyncpg.Pool) -> StickyState:
 
 
 async def write_sticky_state(pool: asyncpg.Pool, result: StickyResult) -> None:
+    # UPSERT — the singleton row may be missing on databases provisioned before
+    # the v2 migration introduced sticky columns.
     await pool.execute(
         """
-        UPDATE last_refresh
-        SET min_level_until_at = $1, min_level_floor = $2
-        WHERE id = 1
+        INSERT INTO last_refresh (id, min_level_until_at, min_level_floor)
+        VALUES (1, $1, $2)
+        ON CONFLICT (id) DO UPDATE
+            SET min_level_until_at = EXCLUDED.min_level_until_at,
+                min_level_floor    = EXCLUDED.min_level_floor
         """,
         result.new_until_at,
         result.new_floor,

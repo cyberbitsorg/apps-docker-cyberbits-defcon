@@ -83,12 +83,37 @@ def test_returns_matched_text_for_logging():
 
 
 def test_trigger_base_scores():
-    assert TRIGGER_BASE["active_exploitation"] == 80
-    assert TRIGGER_BASE["kev_addition"] == 75
-    assert TRIGGER_BASE["critical_scope_vuln"] == 70
-    assert TRIGGER_BASE["confirmed_breach"] == 70
-    assert TRIGGER_BASE["apt_campaign"] == 65
-    assert TRIGGER_BASE["malware_campaign"] == 60
+    assert TRIGGER_BASE["active_exploitation"] == 70
+    assert TRIGGER_BASE["kev_addition"] == 70
+    assert TRIGGER_BASE["critical_scope_vuln"] == 65
+    assert TRIGGER_BASE["confirmed_breach"] == 65
+    assert TRIGGER_BASE["apt_campaign"] == 60
+    assert TRIGGER_BASE["malware_campaign"] == 55
+
+
+def test_exploiting_human_trust_is_not_active_exploitation():
+    # Regression: "exploiting human trust" / "exploiting confusion" should NOT trigger.
+    text = "ai hallucinations create security risks by exploiting human trust in models"
+    assert detect_trigger(text) is None
+
+
+def test_exploiting_a_vuln_still_triggers():
+    assert detect_trigger("attackers exploiting a critical RCE flaw").trigger == "active_exploitation"
+    assert detect_trigger("threat actor exploiting cve-2026-12345").trigger == "active_exploitation"
+
+
+def test_pwn2own_does_not_trigger_active_exploitation():
+    # Pwn2Own is a contest — "exploited" descriptions are research, not in-the-wild.
+    assert detect_trigger("windows 11 and microsoft edge hacked at pwn2own berlin 2026 — researchers exploited a zero-day") is None
+
+
+def test_ctf_does_not_trigger():
+    assert detect_trigger("team exploited zero-day during defcon ctf finals") is None
+
+
+def test_actively_exploited_still_fires_outside_contest():
+    # Sanity: regular wild exploitation phrasing still works.
+    assert detect_trigger("fortinet fortigate flaw actively exploited in the wild").trigger == "active_exploitation"
 
 
 def test_scope_amplifier_all_major_distros():

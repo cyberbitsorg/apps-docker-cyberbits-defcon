@@ -7,6 +7,7 @@ Two-layer deduplication:
 import hashlib
 import logging
 import re
+from typing import Optional
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -47,8 +48,52 @@ _YEAR_RE = re.compile(r"\b(20\d{2})\b")
 
 RECENT_TITLES_KEY = "dedup:recent_titles"
 FINGERPRINTS_KEY = "dedup:fingerprints"
+CVES_KEY = "dedup:cves"
 RECENT_TITLES_MAX = 300
 FINGERPRINT_TTL = 7 * 24 * 3600  # 7 days
+CVE_TTL = 36 * 3600  # 36h — long enough to span overnight news churn, short enough to allow later stories
+
+# CVE-2024-1234, CVE-2024-12345, CVE 2024 12345 (incl. en/em dashes & spaces)
+_CVE_ID_RE = re.compile(r"\bCVE[-–— ]?(\d{4})[-–— ]?(\d{3,7})\b", re.IGNORECASE)
+
+# Known vendor → product proper-noun pairs. When two articles share a pair AND any
+# other meaningful token, treat as duplicate. Tokens are matched lowercase, with
+# word boundaries — product names may contain spaces or hyphens.
+VENDOR_PRODUCT_PAIRS: tuple[tuple[str, str], ...] = (
+    ("cisco", "sd-wan"), ("cisco", "ios"), ("cisco", "catalyst"), ("cisco", "asa"),
+    ("microsoft", "exchange"), ("microsoft", "sharepoint"), ("microsoft", "windows"),
+    ("microsoft", "azure"), ("microsoft", "outlook"), ("microsoft", "teams"),
+    ("apple", "ios"), ("apple", "macos"), ("apple", "safari"),
+    ("google", "chrome"), ("google", "android"),
+    ("fortinet", "fortigate"), ("fortinet", "fortios"), ("fortinet", "fortimanager"),
+    ("ivanti", "epmm"), ("ivanti", "connect secure"), ("ivanti", "endpoint manager"),
+    ("palo alto", "pan-os"), ("vmware", "esxi"), ("vmware", "vcenter"),
+    ("citrix", "netscaler"), ("citrix", "adc"),
+    ("sonicwall", "sma"), ("sonicwall", "firewall"),
+    ("oracle", "weblogic"), ("oracle", "java"),
+    ("openssh", ""), ("openssl", ""), ("nginx", ""), ("apache", "struts"),
+    ("wordpress", ""), ("drupal", ""), ("git", ""), ("curl", ""),
+)
+
+
+def _extract_cves(text: str) -> frozenset[str]:
+    """Return canonical CVE IDs (e.g. 'CVE-2024-1234') found in text."""
+    out = set()
+    for m in _CVE_ID_RE.finditer(text or ""):
+        out.add(f"CVE-{m.group(1)}-{m.group(2)}")
+    return frozenset(out)
+
+
+def _shared_vendor_product(text_a: str, text_b: str) -> Optional[str]:
+    """Return the shared vendor-product pair label if both texts mention it, else None."""
+    a, b = text_a.lower(), text_b.lower()
+    for vendor, product in VENDOR_PRODUCT_PAIRS:
+        if vendor not in a or vendor not in b:
+            continue
+        if product and (product not in a or product not in b):
+            continue
+        return f"{vendor} {product}".strip()
+    return None
 
 
 def _token_set(title: str) -> frozenset[str]:
@@ -122,18 +167,27 @@ def _shared_actor_and_token(title_a: str, title_b: str) -> bool:
     return False
 
 
-async def is_duplicate(title: str, redis_client) -> bool:
+async def is_duplicate(title: str, redis_client, summary: str = "") -> bool:
     """
     Returns True if the article is a duplicate (should be skipped).
     Mutates Redis state when NOT a duplicate.
+    `summary` is optional but strongly recommended — used for CVE-based matching.
     """
     fp = fingerprint(title)
+    text = f"{title} {summary}"
+    cves = _extract_cves(text)
 
     # --- Layer 1: exact/near-exact fingerprint ---
     exists = await redis_client.sismember(FINGERPRINTS_KEY, fp)
     if exists:
         logger.debug(f"[Dedup L1] Fingerprint match: {title[:70]}")
         return True
+
+    # --- Layer 1b: CVE-ID match within TTL window ---
+    for cve in cves:
+        if await redis_client.exists(f"{CVES_KEY}:{cve}"):
+            logger.info(f"[Dedup L1b] CVE {cve} already seen: '{title[:60]}'")
+            return True
 
     # --- Layer 2: semantic similarity vs recent 50 titles ---
     recent_raw = await redis_client.lrange(RECENT_TITLES_KEY, 0, RECENT_TITLES_MAX - 1)
@@ -152,6 +206,13 @@ async def is_duplicate(title: str, redis_client) -> bool:
             if _shared_actor_and_token(title, existing):
                 logger.info(f"[Dedup L0b] Shared threat actor duplicate: '{title[:60]}' ≈ '{existing[:60]}'")
                 return True
+            pair = _shared_vendor_product(title, existing)
+            if pair:
+                existing_tokens = _token_set(existing)
+                shared_tokens = (new_tokens - frozenset(pair.split())) & (existing_tokens - frozenset(pair.split()))
+                if shared_tokens:
+                    logger.info(f"[Dedup L0c] Shared vendor+product '{pair}' duplicate: '{title[:60]}' ≈ '{existing[:60]}'")
+                    return True
             j = _jaccard(new_tokens, _token_set(existing))
             if j >= JACCARD_THRESHOLD:
                 logger.info(f"[Dedup L2-J] Jaccard={j:.2f} duplicate: '{title[:60]}' ≈ '{existing[:60]}'")
@@ -181,5 +242,7 @@ async def is_duplicate(title: str, redis_client) -> bool:
     await redis_client.expire(FINGERPRINTS_KEY, FINGERPRINT_TTL)
     await redis_client.lpush(RECENT_TITLES_KEY, title)
     await redis_client.ltrim(RECENT_TITLES_KEY, 0, RECENT_TITLES_MAX - 1)
+    for cve in cves:
+        await redis_client.set(f"{CVES_KEY}:{cve}", "1", ex=CVE_TTL)
 
     return False
