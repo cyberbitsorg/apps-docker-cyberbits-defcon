@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -12,6 +13,7 @@ from pipeline.scoring_v2 import compute_global_score_v2
 from cache.redis_client import get_redis, publish_cache_invalidation
 from cache.volume import record_volume, get_volume_baseline
 from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, _shared_named_phrase, _shared_actor_and_token, _shared_vendor_product, _extract_cves, JACCARD_THRESHOLD, RECENT_TITLES_KEY
+from pipeline.triggers import detect_trigger as _detect_trigger
 from pipeline.normalizer import normalize
 from pipeline.scorer import compute_global_score
 from feeds.bleeping_computer import BleepingComputerFeed
@@ -49,17 +51,23 @@ scheduler = AsyncIOScheduler()
 def _within_batch_duplicate(
     title: str,
     summary: str,
-    seen: list[tuple[str, str]],
+    seen: list[tuple[str, str, Optional[str]]],
 ) -> bool:
     """Check if (title, summary) is a duplicate of anything already accepted in this batch."""
     if not seen:
         return False
     new_tokens = _token_set(title)
     new_cves = _extract_cves(f"{title} {summary}")
-    for existing_title, existing_summary in seen:
+    new_trigger: Optional[str] = None
+    if new_cves:
+        t = _detect_trigger(f"{title} {summary}")
+        new_trigger = t.trigger if t else None
+    for existing_title, existing_summary, existing_trigger in seen:
         if _temporal_conflict(title, existing_title):
             continue
         if new_cves and (new_cves & _extract_cves(f"{existing_title} {existing_summary}")):
+            if existing_trigger is None and new_trigger is not None:
+                continue  # first escalation within batch — allow
             shared = next(iter(new_cves & _extract_cves(f"{existing_title} {existing_summary}")))
             logger.info(f"[Dedup batch-L1b] CVE {shared}: '{title[:60]}' ≈ '{existing_title[:60]}'")
             return True
@@ -102,7 +110,7 @@ async def run_fetch_cycle():
     # --- Step 2: deduplicate and insert ---
     inserted = 0
     skipped = 0
-    batch_accepted: list[tuple[str, str]] = []  # (title, summary) accepted so far this cycle
+    batch_accepted: list[tuple[str, str, Optional[str]]] = []  # (title, summary, trigger_name) accepted so far
 
     for raw in all_raw:
         if not raw.title or not raw.url:
@@ -127,7 +135,8 @@ async def run_fetch_cycle():
         article_id = await upsert_article(pool, article)
         if article_id:
             await upsert_dedup_log(pool, fp, article_id)
-            batch_accepted.append((raw.title, raw.summary or ""))
+            _t = _detect_trigger(f"{raw.title} {raw.summary or ''}")
+            batch_accepted.append((raw.title, raw.summary or "", _t.trigger if _t else None))
             inserted += 1
         else:
             # guid already existed in DB
