@@ -7,7 +7,7 @@ interface ArticleSourceProps {
 }
 
 export function ArticleSource({ source, sourceDisplay, defconColor }: ArticleSourceProps) {
-  const color = SOURCE_COLORS[source] ?? SOURCE_COLORS["bleeping_computer"];
+  const color = SOURCE_COLORS["bleeping_computer"];
   const abbr = SOURCE_LABELS[source] || sourceDisplay.slice(0, 3).toUpperCase();
   const borderColor = defconColor ?? color;
 
