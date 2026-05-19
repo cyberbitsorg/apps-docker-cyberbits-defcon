@@ -14,6 +14,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from pipeline.vocabulary import THREAT_ACTORS
+from pipeline.triggers import detect_trigger
 
 logger = logging.getLogger(__name__)
 
@@ -189,9 +190,18 @@ async def is_duplicate(title: str, redis_client, summary: str = "") -> bool:
         return True
 
     # --- Layer 1b: CVE-ID match within TTL window ---
-    for cve in cves:
-        if await redis_client.exists(f"{CVES_KEY}:{cve}"):
-            logger.info(f"[Dedup L1b] CVE {cve} already seen: '{title[:60]}'")
+    # _cve_trigger is computed once here and reused at registration below.
+    _cve_trigger = None
+    if cves:
+        _cve_trigger = detect_trigger(text)
+        for cve in cves:
+            stored_raw = await redis_client.get(f"{CVES_KEY}:{cve}")
+            if stored_raw is None:
+                continue
+            stored_val = stored_raw.decode() if isinstance(stored_raw, bytes) else stored_raw
+            if stored_val == "none" and _cve_trigger is not None:
+                continue  # first escalation — allow through
+            logger.info(f"[Dedup L1b] CVE {cve} already seen (stored={stored_val!r}): '{title[:60]}'")
             return True
 
     # --- Layer 2: semantic similarity vs recent 50 titles ---
@@ -247,7 +257,8 @@ async def is_duplicate(title: str, redis_client, summary: str = "") -> bool:
     await redis_client.expire(FINGERPRINTS_KEY, FINGERPRINT_TTL)
     await redis_client.lpush(RECENT_TITLES_KEY, title)
     await redis_client.ltrim(RECENT_TITLES_KEY, 0, RECENT_TITLES_MAX - 1)
+    _trigger_val = _cve_trigger.trigger if _cve_trigger else "none"
     for cve in cves:
-        await redis_client.set(f"{CVES_KEY}:{cve}", "1", ex=CVE_TTL)
+        await redis_client.set(f"{CVES_KEY}:{cve}", _trigger_val, ex=CVE_TTL)
 
     return False
