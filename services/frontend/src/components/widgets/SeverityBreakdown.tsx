@@ -68,6 +68,7 @@ export function SeverityBreakdown({ articles, activeSeverity, onSeverityClick }:
                   backgroundColor: lvl.color,
                   outline: isActive ? `2px solid ${lvl.color}` : undefined,
                   outlineOffset: isActive ? "2px" : undefined,
+                  boxShadow: lvl.defcon === 1 ? "0 0 0 1px #dc2626" : undefined,
                 }}
               />
               <span className={cn(

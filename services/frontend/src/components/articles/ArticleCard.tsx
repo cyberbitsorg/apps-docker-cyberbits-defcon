@@ -29,7 +29,7 @@ export function ArticleCard({ article, onToggleRead }: ArticleCardProps) {
       <div className="p-4 pl-5">
         {/* Source + time + score badge */}
         <div className="flex items-center gap-2 mb-2">
-          <ArticleSource source={source} sourceDisplay={source_display} />
+          <ArticleSource source={source} sourceDisplay={source_display} defconColor={DEFCON_LEVELS[scoreToLevel(defcon_score)].color} />
           <span className="text-xs text-gray-400 dark:text-gray-600">{formatRelativeTime(published_at)}</span>
           {(() => {
             const lvl = DEFCON_LEVELS[scoreToLevel(defcon_score)];

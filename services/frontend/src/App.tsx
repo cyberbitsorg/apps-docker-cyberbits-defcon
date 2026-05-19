@@ -8,7 +8,15 @@ import { Header } from "./components/layout/Header";
 import { DefconGauge } from "./components/defcon/DefconGauge";
 import { ArticleFeed } from "./components/articles/ArticleFeed";
 import { triggerRefresh } from "./api/articles";
-import { DEFCON_LEVELS } from "./lib/constants";
+import { DEFCON_LEVELS, SOURCE_COLORS } from "./lib/constants";
+
+const SOURCES = [
+  { id: "bleeping_computer", label: "Bleeping Computer" },
+  { id: "hacker_news",       label: "Hacker News"       },
+  { id: "hackread",          label: "HackRead"          },
+  { id: "security_affairs",  label: "Security Affairs"  },
+  { id: "the_register",      label: "The Register"      },
+].map((s) => ({ ...s, color: SOURCE_COLORS[s.id] }));
 import { SeverityBreakdown } from "./components/widgets/SeverityBreakdown";
 import { TopThreats } from "./components/widgets/TopThreats";
 import { TrendingKeywords } from "./components/widgets/TrendingKeywords";
@@ -116,6 +124,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             )}
 
+            {/* Top threats */}
+            <TopThreats articles={articles} />
+
             {/* Severity breakdown */}
             <SeverityBreakdown
               articles={articles}
@@ -129,13 +140,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 Sources
               </h3>
               <div className="flex flex-col gap-2">
-                {[
-                  { id: "bleeping_computer", label: "Bleeping Computer", color: "#f97316" },
-                  { id: "hacker_news",       label: "Hacker News",       color: "#8b5cf6" },
-                  { id: "hackread",          label: "HackRead",          color: "#ec4899" },
-                  { id: "security_affairs",  label: "Security Affairs",  color: "#e11d48" },
-                  { id: "the_register",      label: "The Register",      color: "#06b6d4" },
-                ].map((s) => {
+                {SOURCES.map((s) => {
                   const isActive = activeFilters.source === s.id;
                   return (
                     <button
@@ -173,9 +178,6 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               activeSource={activeFilters.source}
               onSourceClick={handleSourceClick}
             />
-
-            {/* Top threats */}
-            <TopThreats articles={articles} />
 
             {/* Trending keywords */}
             <TrendingKeywords articles={articles} />

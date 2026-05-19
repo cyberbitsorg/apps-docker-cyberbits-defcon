@@ -1,9 +1,11 @@
+// Vintage / muted palette — deliberately distinct from the DEFCON warning palette
+// (white / red / yellow / green / blue) so source badges don't read as severity.
 export const SOURCE_COLORS: Record<string, string> = {
-  bleeping_computer: "#f97316",  // orange
-  hacker_news:       "#8b5cf6",  // violet
-  hackread:          "#ec4899",  // pink
-  security_affairs:  "#e11d48",  // rose
-  the_register:      "#06b6d4",  // cyan
+  bleeping_computer: "#cbd5e1",  // slate-300 — lightest
+  hacker_news:       "#94a3b8",  // slate-400
+  hackread:          "#64748b",  // slate-500
+  security_affairs:  "#475569",  // slate-600
+  the_register:      "#334155",  // slate-700 — darkest
 };
 
 export const SOURCE_LABELS: Record<string, string> = {

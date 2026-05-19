@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { cn } from "../../lib/utils";
+import { SOURCE_COLORS } from "../../lib/constants";
 
 interface SourceDistributionProps {
   articles: { source: string }[];
@@ -8,12 +9,12 @@ interface SourceDistributionProps {
 }
 
 const SOURCES = [
-  { id: "bleeping_computer", label: "Bleeping Computer", color: "#f97316" },
-  { id: "hacker_news",       label: "Hacker News",       color: "#8b5cf6" },
-  { id: "hackread",          label: "HackRead",          color: "#ec4899" },
-  { id: "security_affairs",  label: "Security Affairs",  color: "#e11d48" },
-  { id: "the_register",      label: "The Register",      color: "#06b6d4" },
-];
+  { id: "bleeping_computer", label: "Bleeping Computer" },
+  { id: "hacker_news",       label: "Hacker News"       },
+  { id: "hackread",          label: "HackRead"          },
+  { id: "security_affairs",  label: "Security Affairs"  },
+  { id: "the_register",      label: "The Register"      },
+].map((s) => ({ ...s, color: SOURCE_COLORS[s.id] }));
 
 const SIZE = 64;
 const STROKE = 8;
