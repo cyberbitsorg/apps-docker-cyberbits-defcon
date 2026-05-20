@@ -88,9 +88,9 @@ _BREACH_VERB = re.compile(
 )
 
 _BREACH_SCALE_MILLIONS = re.compile(r"\bmillions? of\b", re.IGNORECASE)
-_BREACH_SCALE_NUMERIC  = re.compile(r"\b\d+[kKmM]\+?\s*(users|records|emails|accounts|customers)\b", re.IGNORECASE)
+_BREACH_SCALE_NUMERIC  = re.compile(r"\b\d+[kKmM]\+?\s*(users|records|emails|accounts|customers|repos|repositories|packages|codebases?)\b", re.IGNORECASE)
 _BREACH_SCALE_COMMA = re.compile(
-    r"\b\d{1,3}(?:,\d{3})+\s+(users|records|emails|accounts|customers|people|schools|patients|students|employees|individuals|organizations)\b",
+    r"\b\d{1,3}(?:,\d{3})+\s+(users|records|emails|accounts|customers|people|schools|patients|students|employees|individuals|organizations|repos|repositories|packages|codebases?)\b",
     re.IGNORECASE,
 )
 

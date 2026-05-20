@@ -402,3 +402,25 @@ def test_breach_exposed_alone_not_a_breach():
     text = "we scanned 1 million exposed ai services in our research project"
     match = detect_trigger(text)
     assert match is None or match.trigger != "confirmed_breach"
+
+
+def test_breach_scale_numeric_repos():
+    # 5k repos breached — numeric k-style scale
+    from pipeline.triggers import _BREACH_SCALE_NUMERIC
+    assert _BREACH_SCALE_NUMERIC.search("breach of 5k repos confirmed")
+
+
+def test_breach_scale_numeric_packages():
+    from pipeline.triggers import _BREACH_SCALE_NUMERIC
+    assert _BREACH_SCALE_NUMERIC.search("200k packages affected in supply chain attack")
+
+
+def test_breach_scale_comma_repos():
+    # 3,800 repos — comma-separated style (the GitHub article)
+    from pipeline.triggers import _BREACH_SCALE_COMMA
+    assert _BREACH_SCALE_COMMA.search("breach of 3,800 repos confirmed")
+
+
+def test_breach_scale_comma_packages():
+    from pipeline.triggers import _BREACH_SCALE_COMMA
+    assert _BREACH_SCALE_COMMA.search("supply chain attack affecting 15,000 packages")
