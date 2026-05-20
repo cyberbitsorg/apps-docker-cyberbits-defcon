@@ -452,3 +452,17 @@ def test_confirmed_breach_npm_packages_comma():
     match = detect_trigger(text)
     assert match is not None
     assert match.trigger == "confirmed_breach"
+
+
+def test_package_registry_in_critical_sector_re():
+    # Verify _CRITICAL_SECTOR_RE picks up the new sector term
+    from pipeline.triggers import _CRITICAL_SECTOR_RE
+    assert _CRITICAL_SECTOR_RE.search("npm package registry breach confirmed") is not None
+
+
+def test_confirmed_breach_package_registry_no_numeric_scale():
+    # package registry as sector is enough scale — no number needed
+    text = "npm package registry confirms breach of developer credentials"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "confirmed_breach"
