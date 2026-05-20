@@ -63,17 +63,6 @@ Clean reset (drops all data):
 podman compose down -v && podman compose up --build -d
 ```
 
-## Common commands (Makefile)
-
-| Command | What it does |
-|---|---|
-| `make deploy` | Full production deploy: `tofu apply` → rescore existing articles → flush API cache |
-| `make prd-rescore` | Rescore existing articles + flush API cache on PRD — run after any scoring change |
-| `make test` | Run scoring pipeline tests locally (`test_triggers`, `test_vocabulary`, `test_scoring_v2`) |
-| `make test-all` | Run the full test suite locally |
-
-> **After any change to `triggers.py`, `vocabulary.py`, or `scorer*.py`:** existing articles in the database keep their old score until rescored. Run `make prd-rescore` (or `make deploy` for a full push) to apply the new scoring to all articles.
-
 ## Production deployment (OpenTofu)
 
 ### Requirements
@@ -253,6 +242,17 @@ The global score is not a simple average. It takes the highest-scoring article f
 ### 4. Store
 
 Articles are upserted into PostgreSQL. Old articles are trimmed to keep 100 total / 15 per source.
+
+## Makefile
+
+After any change to `triggers.py`, `vocabulary.py`, or `scorer*.py`: existing articles in the database keep their old score until rescored. Run `make prd-rescore` (or `make deploy` for a full push) to apply the new scoring to all articles.
+
+| Command | What it does |
+|---|---|
+| `make deploy` | Full production deploy: `tofu apply` → rescore existing articles → flush API cache |
+| `make prd-rescore` | Rescore existing articles + flush API cache on PRD; run after any scoring change |
+| `make test` | Run scoring pipeline tests locally (`test_triggers`, `test_vocabulary`, `test_scoring_v2`) |
+| `make test-all` | Run the full test suite locally |
 
 ## API endpoints
 
