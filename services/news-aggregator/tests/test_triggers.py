@@ -424,3 +424,16 @@ def test_breach_scale_comma_repos():
 def test_breach_scale_comma_packages():
     from pipeline.triggers import _BREACH_SCALE_COMMA
     assert _BREACH_SCALE_COMMA.search("supply chain attack affecting 15,000 packages")
+
+
+def test_no_false_positive_repos_without_breach_verb():
+    # "shares 3,800 repos" has no breach verb — must not fire confirmed_breach
+    text = "developer shares 3,800 repos on github under open source license"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "confirmed_breach"
+
+
+def test_no_false_positive_packages_without_breach_verb():
+    text = "npm publishes 15,000 packages per day as ecosystem grows"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "confirmed_breach"
