@@ -197,7 +197,7 @@ Temporal conflicts (different months/years in titles) are never flagged as dupli
 
 ### 3. Score (DEFCON 0-100)
 
-> Note: the scoring system is still a worek in progress!
+> Note: the scoring system is still a work in progress!
 > v2 scoring model is the newest model. Set `SCORER_VERSION=v2` in your environment to enable this model.
 > The default remains `v1` for backward compatibility.
 
