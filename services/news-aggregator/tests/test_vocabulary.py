@@ -86,25 +86,20 @@ def test_tier2_has_v23_additions():
 
 
 def test_malicious_extension_in_tier1():
-    from pipeline.vocabulary import TIER1
     assert "malicious extension" in TIER1
 
 
 def test_malicious_plugin_in_tier1():
-    from pipeline.vocabulary import TIER1
     assert "malicious plugin" in TIER1
 
 
 def test_malicious_package_in_tier1():
-    from pipeline.vocabulary import TIER1
     assert "malicious package" in TIER1
 
 
 def test_malicious_dependency_in_tier1():
-    from pipeline.vocabulary import TIER1
     assert "malicious dependency" in TIER1
 
 
 def test_package_registry_in_critical_sectors():
-    from pipeline.vocabulary import CRITICAL_SECTORS
     assert "package registry" in CRITICAL_SECTORS
