@@ -17,7 +17,7 @@ export const SOURCE_LABELS: Record<string, string> = {
 };
 
 export const DEFCON_LEVELS = {
-  1: { term: "Cocked Pistol", color: "#ffffff", bg: "bg-white/10",      border: "border-white/30",      text: "text-white"       },
+  1: { term: "Cocked Pistol", color: "#ffffff", bg: "bg-white/10",      border: "border-white/30",      text: "text-gray-900 dark:text-white" },
   2: { term: "Fast Pace",     color: "#dc2626", bg: "bg-red-600/10",    border: "border-red-600/30",    text: "text-red-400"     },
   3: { term: "Round House",   color: "#eab308", bg: "bg-yellow-500/10", border: "border-yellow-500/30", text: "text-yellow-400"  },
   4: { term: "Double Take",   color: "#22c55e", bg: "bg-green-500/10",  border: "border-green-500/30",  text: "text-green-400"   },

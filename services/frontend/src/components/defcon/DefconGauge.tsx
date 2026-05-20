@@ -142,11 +142,11 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
           {/* Needle */}
           <polygon
             points={`${needleTip.x.toFixed(2)},${needleTip.y.toFixed(2)} ${needleL.x.toFixed(2)},${needleL.y.toFixed(2)} ${needleR.x.toFixed(2)},${needleR.y.toFixed(2)}`}
-            fill="white"
+            className="fill-black dark:fill-white"
             opacity={0.9}
           />
           {/* Needle pivot */}
-          <circle cx={CX} cy={CY} r={5} fill="white" opacity={0.9} />
+          <circle cx={CX} cy={CY} r={5} className="fill-black dark:fill-white" opacity={0.9} />
           <circle cx={CX} cy={CY} r={3} fill={level.color} />
 
           {/* Level number, term, score — glow only these at DEFCON 1 */}
