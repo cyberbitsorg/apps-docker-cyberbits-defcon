@@ -437,3 +437,18 @@ def test_no_false_positive_packages_without_breach_verb():
     text = "npm publishes 15,000 packages per day as ecosystem grows"
     match = detect_trigger(text)
     assert match is None or match.trigger != "confirmed_breach"
+
+
+def test_confirmed_breach_github_repos():
+    # The article that triggered this fix: GitHub breach of 3,800 repos
+    text = "github confirms breach of 3,800 repos via malicious vscode extension"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "confirmed_breach"
+
+
+def test_confirmed_breach_npm_packages_comma():
+    text = "npm registry data breach exposes source code of 15,000 packages"
+    match = detect_trigger(text)
+    assert match is not None
+    assert match.trigger == "confirmed_breach"
