@@ -14,6 +14,8 @@ TIER1 = [
     "ransomware attack", "critical infrastructure",
     "infostealer", "stealer campaign", "malware campaign",
     "supply chain attack", "credential stealer",
+    "malicious extension", "malicious plugin",
+    "malicious package", "malicious dependency",
 ]
 
 TIER2 = [
@@ -54,6 +56,7 @@ CRITICAL_SECTORS = [
     "rail", "railway", "metro", "transit", "subway",
     "school", "schools", "k-12",
     "hospital system", "health system", "healthcare",
+    "package registry",
 ]
 
 # Known infostealer/RAT family names — used by malware_campaign trigger only.
