@@ -14,6 +14,26 @@ def test_cvss_explicit_score_wins():
     assert _extract_cvss_v2("cvss 9.8 vulnerability") == pytest.approx(9.8)
 
 
+# --- max severity / maximum severity prose signal ---
+
+def test_cvss_max_severity_phrase_scores_9():
+    # Common headline phrasing — "max severity" with no CVSS number, no CVE id.
+    assert _extract_cvss_v2("ubiquiti patches three max severity unifi os vulnerabilities") == 9.0
+
+
+def test_cvss_maximum_severity_phrase_scores_9():
+    assert _extract_cvss_v2("maximum severity cisco flaw gives site admin privileges") == 9.0
+
+
+def test_cvss_max_severity_explicit_cvss_still_wins():
+    assert _extract_cvss_v2("max severity flaw with cvss 7.5 rating") == pytest.approx(7.5)
+
+
+def test_cvss_max_severity_loose_without_severity_word_does_not_match():
+    # Just "max" shouldn't trigger — needs the "severity" qualifier
+    assert _extract_cvss_v2("max throughput patch released") == 0.0
+
+
 def test_cvss_severity_word_alone_does_not_score():
     # "critical" without a CVE id should NOT score
     assert _extract_cvss_v2("critical for soc teams to patch") == 0.0

@@ -85,10 +85,67 @@ def test_returns_matched_text_for_logging():
 def test_trigger_base_scores():
     assert TRIGGER_BASE["active_exploitation"] == 70
     assert TRIGGER_BASE["kev_addition"] == 70
+    assert TRIGGER_BASE["ceiling_cvss"] == 65
+    assert TRIGGER_BASE["supply_chain_compromise"] == 65
     assert TRIGGER_BASE["critical_scope_vuln"] == 65
     assert TRIGGER_BASE["confirmed_breach"] == 65
     assert TRIGGER_BASE["apt_campaign"] == 60
     assert TRIGGER_BASE["malware_campaign"] == 55
+
+
+# --- ceiling_cvss: explicit CVSS >= 9.8 fires a decisive trigger ---
+
+def test_ceiling_cvss_10_fires():
+    result = detect_trigger("cisco patches cvss 10.0 secure workload rest api flaw")
+    assert result is not None
+    assert result.trigger == "ceiling_cvss"
+
+
+def test_ceiling_cvss_98_fires():
+    assert detect_trigger("fortinet discloses cvss 9.8 fortios bug").trigger == "ceiling_cvss"
+
+
+def test_ceiling_cvss_97_does_not_fire():
+    # Just below threshold — no ceiling trigger
+    assert detect_trigger("cvss 9.7 vulnerability disclosed in vendor product") is None
+
+
+def test_ceiling_cvss_yields_to_active_exploitation():
+    # active_exploitation has higher precedence
+    result = detect_trigger("cvss 10.0 flaw actively exploited in the wild")
+    assert result.trigger == "active_exploitation"
+
+
+def test_ceiling_cvss_yields_to_kev():
+    result = detect_trigger("cisa adds cvss 10.0 flaw to kev catalog")
+    assert result.trigger == "kev_addition"
+
+
+# --- supply_chain_compromise: malicious packages/repos/workflows at scale ---
+
+def test_supply_chain_5561_repos_with_malicious_workflows():
+    text = "megalodon github attack targets 5,561 repos with malicious ci/cd workflows"
+    result = detect_trigger(text)
+    assert result is not None
+    assert result.trigger == "supply_chain_compromise"
+
+
+def test_supply_chain_malicious_npm_packages():
+    assert detect_trigger("threat actors publish 200 malicious npm packages").trigger == "supply_chain_compromise"
+
+
+def test_supply_chain_compromised_pypi_packages():
+    assert detect_trigger("attackers compromised 47 pypi packages with backdoor").trigger == "supply_chain_compromise"
+
+
+def test_supply_chain_requires_scale_or_supply_chain_artifact():
+    # "malicious workflow" without scale/artifact context — no trigger
+    assert detect_trigger("vendor warns about a single malicious update") is None
+
+
+def test_supply_chain_yields_to_active_exploitation():
+    text = "actively exploited flaw in 5,000 repos with malicious workflows"
+    assert detect_trigger(text).trigger == "active_exploitation"
 
 
 def test_exploiting_human_trust_is_not_active_exploitation():
@@ -440,11 +497,12 @@ def test_no_false_positive_packages_without_breach_verb():
 
 
 def test_confirmed_breach_github_repos():
-    # The article that triggered this fix: GitHub breach of 3,800 repos
+    # Malicious extension reaching N repos — supply_chain_compromise is the
+    # more specific match (both share base 65, so the score is unchanged).
     text = "github confirms breach of 3,800 repos via malicious vscode extension"
     match = detect_trigger(text)
     assert match is not None
-    assert match.trigger == "confirmed_breach"
+    assert match.trigger == "supply_chain_compromise"
 
 
 def test_confirmed_breach_npm_packages_comma():

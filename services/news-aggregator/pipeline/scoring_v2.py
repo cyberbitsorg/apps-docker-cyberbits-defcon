@@ -45,6 +45,11 @@ def _extract_cvss_v2(text: str) -> float:
                 pass
     if scores:
         return max(scores)
+
+    # "max severity" / "maximum severity" — vendor-press shorthand for CVSS ~10.
+    if re.search(r"\bmax(?:imum)?\s+severity\b", text, re.IGNORECASE):
+        return 9.0
+
     if _CVE_ID_RE.search(text):
         matching = [score for word, score in _SEVERITY_WORDS.items()
                     if re.search(rf"\b{word}\b", text, re.IGNORECASE)]

@@ -21,11 +21,14 @@ from pipeline.vocabulary import THREAT_ACTORS, CRITICAL_SECTORS, KNOWN_STEALERS
 TriggerType = Literal[
     "active_exploitation", "confirmed_breach", "apt_campaign",
     "kev_addition", "critical_scope_vuln", "malware_campaign",
+    "ceiling_cvss", "supply_chain_compromise",
 ]
 
 TRIGGER_BASE: dict[TriggerType, int] = {
     "active_exploitation": 70,
     "kev_addition": 70,
+    "ceiling_cvss": 65,
+    "supply_chain_compromise": 65,
     "critical_scope_vuln": 65,
     "confirmed_breach": 65,
     "apt_campaign": 60,
@@ -36,6 +39,8 @@ TRIGGER_BASE: dict[TriggerType, int] = {
 PRECEDENCE: tuple[TriggerType, ...] = (
     "active_exploitation",
     "kev_addition",
+    "ceiling_cvss",
+    "supply_chain_compromise",
     "critical_scope_vuln",
     "confirmed_breach",
     "apt_campaign",
@@ -261,9 +266,55 @@ def _match_malware_campaign(text: str) -> Optional[str]:
     return noun.group(0)
 
 
+# --- ceiling_cvss: explicit CVSS >= 9.8 alone is decisive ---
+
+_CEILING_CVSS_RE = re.compile(
+    r"\bcvss[^\n]{0,20}?(10(?:\.0)?|9\.[89])\b",
+    re.IGNORECASE,
+)
+
+
+def _match_ceiling_cvss(text: str) -> Optional[str]:
+    m = _CEILING_CVSS_RE.search(text)
+    return m.group(0) if m else None
+
+
+# --- supply_chain_compromise: malicious packages/repos/workflows at scale ---
+
+_SUPPLY_CHAIN_ARTIFACT_RE = re.compile(
+    r"\b(repos|repositories|packages|codebases?|workflows|ci/cd|registry|"
+    r"npm|pypi|rubygems|crates\.io|docker images?|container images?|maven|nuget)\b",
+    re.IGNORECASE,
+)
+
+_SUPPLY_CHAIN_BADNESS_RE = re.compile(
+    r"\b(malicious|compromised?|poisoned|backdoor(?:ed)?|typosquat\w*|"
+    r"trojanized|infected|hijacked)\b",
+    re.IGNORECASE,
+)
+
+_SUPPLY_CHAIN_SCALE_RE = re.compile(
+    r"\b(\d{1,3}(?:,\d{3})+|\d{2,}|hundreds|thousands|dozens)\b",
+    re.IGNORECASE,
+)
+
+
+def _match_supply_chain_compromise(text: str) -> Optional[str]:
+    artifact = _SUPPLY_CHAIN_ARTIFACT_RE.search(text)
+    if not artifact:
+        return None
+    if not _SUPPLY_CHAIN_BADNESS_RE.search(text):
+        return None
+    if not _SUPPLY_CHAIN_SCALE_RE.search(text):
+        return None
+    return artifact.group(0)
+
+
 _DETECTORS = {
     "active_exploitation": _match_active_exploitation,
     "kev_addition": _match_kev,
+    "ceiling_cvss": _match_ceiling_cvss,
+    "supply_chain_compromise": _match_supply_chain_compromise,
     "confirmed_breach": _match_breach,
     "apt_campaign": _match_apt,
     "critical_scope_vuln": _match_critical_scope_vuln,
@@ -280,7 +331,7 @@ def detect_trigger(text: str) -> Optional[TriggerMatch]:
     """
     contest = _is_contest_context(text)
     for trigger in PRECEDENCE:
-        if contest and trigger in ("active_exploitation", "kev_addition", "critical_scope_vuln"):
+        if contest and trigger in ("active_exploitation", "kev_addition", "ceiling_cvss", "critical_scope_vuln"):
             continue
         matched = _DETECTORS[trigger](text)
         if matched:
