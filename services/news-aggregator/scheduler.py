@@ -12,8 +12,8 @@ from db.sticky_level import read_sticky_state, write_sticky_state, compute_displ
 from pipeline.scoring import compute_global_score, _current_window_hours
 from cache.redis_client import get_redis, publish_cache_invalidation
 from cache.volume import record_volume, get_volume_baseline
-from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, _shared_named_phrase, _shared_actor_and_token, _shared_vendor_product, _extract_cves, JACCARD_THRESHOLD, RECENT_TITLES_KEY
-from pipeline.triggers import detect_trigger as _detect_trigger
+from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, is_batch_duplicate, RECENT_TITLES_KEY
+from pipeline.triggers import detect_trigger
 from pipeline.normalizer import normalize
 from feeds.bleeping_computer import BleepingComputerFeed
 from feeds.hacker_news import HackerNewsFeed
@@ -47,49 +47,6 @@ FEEDS = [
 scheduler = AsyncIOScheduler()
 
 
-def _within_batch_duplicate(
-    title: str,
-    summary: str,
-    seen: list[tuple[str, str, Optional[str]]],
-) -> bool:
-    """Check if (title, summary) is a duplicate of anything already accepted in this batch."""
-    if not seen:
-        return False
-    new_tokens = _token_set(title)
-    new_cves = _extract_cves(f"{title} {summary}")
-    new_trigger: Optional[str] = None
-    if new_cves:
-        t = _detect_trigger(f"{title} {summary}")
-        new_trigger = t.trigger if t else None
-    for existing_title, existing_summary, existing_trigger in seen:
-        if _temporal_conflict(title, existing_title):
-            continue
-        if new_cves and (new_cves & _extract_cves(f"{existing_title} {existing_summary}")):
-            if existing_trigger is None and new_trigger is not None:
-                continue  # first escalation within batch — allow
-            shared = next(iter(new_cves & _extract_cves(f"{existing_title} {existing_summary}")))
-            logger.info(f"[Dedup batch-L1b] CVE {shared}: '{title[:60]}' ≈ '{existing_title[:60]}'")
-            return True
-        if _shared_named_phrase(title, existing_title):
-            logger.info(f"[Dedup batch-L0a] Named phrase: '{title[:60]}' ≈ '{existing_title[:60]}'")
-            return True
-        if _shared_actor_and_token(title, existing_title):
-            logger.info(f"[Dedup batch-L0b] Threat actor: '{title[:60]}' ≈ '{existing_title[:60]}'")
-            return True
-        pair = _shared_vendor_product(title, existing_title)
-        if pair:
-            existing_tokens = _token_set(existing_title)
-            pair_tokens = frozenset(pair.split())
-            if (new_tokens - pair_tokens) & (existing_tokens - pair_tokens):
-                logger.info(f"[Dedup batch-L0c] Vendor+product '{pair}': '{title[:60]}' ≈ '{existing_title[:60]}'")
-                return True
-        j = _jaccard(new_tokens, _token_set(existing_title))
-        if j >= JACCARD_THRESHOLD:
-            logger.info(f"[Dedup batch] Jaccard={j:.2f}: '{title[:60]}' ≈ '{existing_title[:60]}'")
-            return True
-    return False
-
-
 async def run_fetch_cycle():
     logger.info("Starting fetch cycle...")
     pool = await get_pool()
@@ -118,7 +75,7 @@ async def run_fetch_cycle():
         fp = make_fingerprint(raw.title)
 
         # Within-batch dedup first (catches cross-feed duplicates before Redis state is updated)
-        if _within_batch_duplicate(raw.title, raw.summary or "", batch_accepted):
+        if is_batch_duplicate(raw.title, raw.summary or "", batch_accepted):
             skipped += 1
             await upsert_dedup_log(pool, fp, None)
             continue
@@ -134,7 +91,7 @@ async def run_fetch_cycle():
         article_id = await upsert_article(pool, article)
         if article_id:
             await upsert_dedup_log(pool, fp, article_id)
-            _t = _detect_trigger(f"{raw.title} {raw.summary or ''}")
+            _t = detect_trigger(f"{raw.title} {raw.summary or ''}")
             batch_accepted.append((raw.title, raw.summary or "", _t.trigger if _t else None))
             inserted += 1
         else:

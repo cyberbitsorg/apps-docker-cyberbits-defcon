@@ -101,3 +101,36 @@ async def test_escalation_updates_cve_key(redis):
     await is_duplicate("NGINX CVE-2026-42945 exploited in the wild", redis)
     stored = await redis.get(f"{CVES_KEY}:CVE-2026-42945")
     assert stored == b"active_exploitation"
+
+
+from pipeline.deduplicator import is_batch_duplicate
+
+
+def test_is_batch_duplicate_empty_batch():
+    assert is_batch_duplicate("Any title", "summary", []) is False
+
+
+def test_is_batch_duplicate_shared_named_phrase():
+    seen = [('Cisco patches "DarkSword" backdoor', "summary one", None)]
+    assert is_batch_duplicate('"DarkSword" backdoor confirmed in wild', "summary two", seen) is True
+
+
+def test_is_batch_duplicate_jaccard_threshold():
+    seen = [("Microsoft Exchange critical RCE patched", "", None)]
+    assert is_batch_duplicate("Critical Exchange RCE patched by Microsoft", "", seen) is True
+
+
+def test_is_batch_duplicate_temporal_conflict_skipped():
+    seen = [("March Patch Tuesday roundup 2026", "", None)]
+    assert is_batch_duplicate("April Patch Tuesday roundup 2026", "", seen) is False
+
+
+def test_is_batch_duplicate_cve_id_match():
+    seen = [("Vendor X discloses CVE-2026-1234", "internal write-up", None)]
+    assert is_batch_duplicate("Researcher publishes PoC for CVE-2026-1234", "", seen) is True
+
+
+def test_is_batch_duplicate_first_trigger_escalation_allowed():
+    seen = [("Vendor X advises customers about CVE-2026-1234", "", None)]
+    title = "Active exploitation of CVE-2026-1234 spotted in the wild"
+    assert is_batch_duplicate(title, "actively exploited", seen) is False

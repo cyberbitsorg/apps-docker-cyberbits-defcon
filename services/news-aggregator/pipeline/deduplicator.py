@@ -262,3 +262,56 @@ async def is_duplicate(title: str, redis_client, summary: str = "") -> bool:
         await redis_client.set(f"{CVES_KEY}:{cve}", _trigger_val, ex=CVE_TTL)
 
     return False
+
+
+def is_batch_duplicate(
+    title: str,
+    summary: str,
+    seen: list[tuple[str, str, Optional[str]]],
+) -> bool:
+    """
+    Synchronous within-batch duplicate check.
+
+    `seen` is the list of (title, summary, trigger_name) tuples already
+    accepted in the current fetch cycle. Returns True if (title, summary)
+    should be skipped as a duplicate of something already in `seen`.
+
+    Mirrors the Redis-backed checks in `is_duplicate` but operates on an
+    in-memory list. Used by the scheduler to catch cross-feed duplicates
+    before Redis state is mutated.
+    """
+    if not seen:
+        return False
+    new_tokens = _token_set(title)
+    new_cves = _extract_cves(f"{title} {summary}")
+    new_trigger: Optional[str] = None
+    if new_cves:
+        t = detect_trigger(f"{title} {summary}")
+        new_trigger = t.trigger if t else None
+    for existing_title, existing_summary, existing_trigger in seen:
+        if _temporal_conflict(title, existing_title):
+            continue
+        if new_cves and (new_cves & _extract_cves(f"{existing_title} {existing_summary}")):
+            if existing_trigger is None and new_trigger is not None:
+                continue  # first escalation within batch — allow
+            shared = next(iter(new_cves & _extract_cves(f"{existing_title} {existing_summary}")))
+            logger.info(f"[Dedup batch-L1b] CVE {shared}: '{title[:60]}' ≈ '{existing_title[:60]}'")
+            return True
+        if _shared_named_phrase(title, existing_title):
+            logger.info(f"[Dedup batch-L0a] Named phrase: '{title[:60]}' ≈ '{existing_title[:60]}'")
+            return True
+        if _shared_actor_and_token(title, existing_title):
+            logger.info(f"[Dedup batch-L0b] Threat actor: '{title[:60]}' ≈ '{existing_title[:60]}'")
+            return True
+        pair = _shared_vendor_product(title, existing_title)
+        if pair:
+            existing_tokens = _token_set(existing_title)
+            pair_tokens = frozenset(pair.split())
+            if (new_tokens - pair_tokens) & (existing_tokens - pair_tokens):
+                logger.info(f"[Dedup batch-L0c] Vendor+product '{pair}': '{title[:60]}' ≈ '{existing_title[:60]}'")
+                return True
+        j = _jaccard(new_tokens, _token_set(existing_title))
+        if j >= JACCARD_THRESHOLD:
+            logger.info(f"[Dedup batch] Jaccard={j:.2f}: '{title[:60]}' ≈ '{existing_title[:60]}'")
+            return True
+    return False
