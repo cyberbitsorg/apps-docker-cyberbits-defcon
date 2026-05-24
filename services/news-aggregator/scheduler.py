@@ -9,7 +9,7 @@ from db.connection import get_pool
 from db.articles import upsert_article, upsert_dedup_log, trim_old_articles, get_recent_articles, get_new_article_count_since, get_articles_in_window
 from db.defcon import insert_defcon_history_v1, insert_defcon_history_v2
 from db.sticky_level import read_sticky_state, write_sticky_state, compute_displayed_level
-from pipeline.scoring_v2 import compute_global_score_v2
+from pipeline.scoring_v2 import compute_global_score_v2, _current_window_hours
 from cache.redis_client import get_redis, publish_cache_invalidation
 from cache.volume import record_volume, get_volume_baseline
 from pipeline.deduplicator import is_duplicate, fingerprint as make_fingerprint, _token_set, _jaccard, _temporal_conflict, _shared_named_phrase, _shared_actor_and_token, _shared_vendor_product, _extract_cves, JACCARD_THRESHOLD, RECENT_TITLES_KEY
@@ -158,8 +158,15 @@ async def run_fetch_cycle():
     avg_vol = await get_volume_baseline(redis)
 
     if settings.scorer_version == "v2":
-        window = await get_articles_in_window(pool, hours=24)
-        g = compute_global_score_v2(window, new_count=new_count, baseline=avg_vol)
+        now_utc = datetime.now(timezone.utc)
+        active_window_hours = _current_window_hours(now_utc)
+        window = await get_articles_in_window(pool, hours=72)
+        g = compute_global_score_v2(
+            window,
+            new_count=new_count,
+            baseline=avg_vol,
+            window_hours=active_window_hours,
+        )
         raw_level = _level_from_score(g.score)
         sticky_state = await read_sticky_state(pool)
         sticky_result = compute_displayed_level(raw_level, sticky_state, datetime.now(timezone.utc))
