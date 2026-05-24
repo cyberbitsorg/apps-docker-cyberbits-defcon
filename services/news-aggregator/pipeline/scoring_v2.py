@@ -208,7 +208,6 @@ class GlobalScore:
     trigger_article_title: Optional[str]
 
 
-_WINDOW_HOURS = 24.0
 _WINDOW_HOURS_WEEKDAY = 48.0
 _WINDOW_HOURS_WEEKEND = 72.0
 
@@ -233,17 +232,25 @@ def compute_global_score_v2(
     articles_in_window: list[dict],
     new_count: int,
     baseline: Optional[float],
+    window_hours: Optional[float] = None,
 ) -> GlobalScore:
     """
     Global v2 score = clamp(weighted_max + volume_bonus, 0, 100).
 
     Each article in `articles_in_window` must have:
       id, title, defcon_score, defcon_trigger, published_at (datetime, tz-aware preferred).
+
+    `window_hours` overrides the active decay window. When omitted it auto-selects
+    based on the current UTC day (see `_current_window_hours`). Pass explicitly
+    in tests for deterministic results.
     """
+    if window_hours is None:
+        window_hours = _current_window_hours(datetime.now(timezone.utc))
+
     weighted_max = 0.0
     winner: Optional[dict] = None
     for art in articles_in_window:
-        weight = max(0.0, 1.0 - _age_hours(art["published_at"]) / _WINDOW_HOURS)
+        weight = max(0.0, 1.0 - _age_hours(art["published_at"]) / window_hours)
         contribution = float(art["defcon_score"]) * weight
         if contribution > weighted_max:
             weighted_max = contribution

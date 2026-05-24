@@ -204,15 +204,32 @@ def test_global_v2_picks_highest_weighted():
 
 
 def test_global_v2_age_decays_weight():
-    # 90-pt article, 12h old, weight = 0.5 → contribution = 45
+    # 90-pt article, 36h old, with 48h window: weight = (48-36)/48 = 0.25 → contribution = 22.5
     # 50-pt article, 0h old, weight = 1.0 → contribution = 50
     arts = [
-        _article(90, trigger="active_exploitation", age_hours=12, aid="old"),
+        _article(90, trigger="active_exploitation", age_hours=36, aid="old"),
         _article(50, trigger=None, age_hours=0, aid="fresh"),
     ]
-    g = compute_global_score_v2(arts, new_count=5, baseline=5.0)
+    g = compute_global_score_v2(arts, new_count=5, baseline=5.0, window_hours=48.0)
     assert g.trigger_article_id == "fresh"
     assert g.weighted_max == pytest.approx(50.0)
+
+
+def test_global_v2_uses_passed_window_weekday():
+    # 50h-old article: with 48h window weight=max(0, 1 - 50/48)=0,
+    # with 72h window weight=(72-50)/72 ≈ 0.306 → contribution ≈ 27.5
+    arts = [_article(90, trigger="active_exploitation", age_hours=50, aid="old")]
+    g_weekday = compute_global_score_v2(arts, new_count=0, baseline=None, window_hours=48.0)
+    assert g_weekday.weighted_max == pytest.approx(0.0)
+    g_weekend = compute_global_score_v2(arts, new_count=0, baseline=None, window_hours=72.0)
+    assert g_weekend.weighted_max == pytest.approx(90.0 * (72 - 50) / 72, rel=1e-3)
+
+
+def test_global_v2_window_default_uses_current_day():
+    # No explicit window_hours: function must still return a sensible score.
+    arts = [_article(60, age_hours=0)]
+    g = compute_global_score_v2(arts, new_count=0, baseline=None)
+    assert g.weighted_max == pytest.approx(60.0)
 
 
 def test_global_v2_volume_bonus_baseline_zero():
