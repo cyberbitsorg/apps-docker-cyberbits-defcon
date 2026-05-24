@@ -215,6 +215,7 @@ _WINDOW_HOURS_WEEKEND = 72.0
 
 def _current_window_hours(now: datetime) -> float:
     """Return the active decay window in hours. 72h on Sat/Sun (UTC), 48h otherwise."""
+    # Python weekday(): Mon=0 .. Sat=5, Sun=6
     return _WINDOW_HOURS_WEEKEND if now.weekday() in (5, 6) else _WINDOW_HOURS_WEEKDAY
 
 
