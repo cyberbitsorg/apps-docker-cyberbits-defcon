@@ -45,12 +45,6 @@ variable "log_level" {
   default     = "INFO"
 }
 
-variable "scorer_version" {
-  description = "Scoring pipeline version: v1 (default) or v2 (decisive-trigger model)"
-  type        = string
-  default     = "v1"
-}
-
 variable "redis_maxmemory" {
   description = "Redis maxmemory limit"
   type        = string

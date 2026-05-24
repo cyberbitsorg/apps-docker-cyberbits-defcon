@@ -73,7 +73,6 @@ module "defcon" {
 
   fetch_interval_minutes = var.defcon_fetch_interval_minutes
   log_level              = var.defcon_log_level
-  scorer_version         = var.defcon_scorer_version
   redis_maxmemory        = var.defcon_redis_maxmemory
   redis_maxmemory_policy = var.defcon_redis_maxmemory_policy
 
