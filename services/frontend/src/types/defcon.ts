@@ -23,6 +23,7 @@ export type TriggerType =
 export interface TriggerArticle {
   id: string;
   title: string;
+  published_at?: string | null;
 }
 
 export interface DefconStatus {

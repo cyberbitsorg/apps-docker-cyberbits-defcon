@@ -2,6 +2,7 @@ import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from "rec
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { DEFCON_LEVELS } from "../../lib/constants";
 import type { DefconStatus, DefconHistoryPoint } from "../../types/defcon";
+import { formatRelativeTime } from "../../lib/utils";
 
 interface DefconGaugeProps {
   status: DefconStatus;
@@ -55,6 +56,7 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
 
   const trigger = status.trigger ?? null;
   const triggerArticle = status.trigger_article ?? null;
+  const triggerAge = triggerArticle?.published_at ? formatRelativeTime(triggerArticle.published_at) : null;
 
   const TRIGGER_LABELS: Record<string, string> = {
     active_exploitation: "Active exploitation",
@@ -198,6 +200,9 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
               {": "}
               <span className="text-gray-300">{causalSentence.title}</span>
             </>
+          )}
+          {triggerAge && (
+            <span className="text-gray-500 dark:text-gray-500"> · {triggerAge}</span>
           )}
         </p>
         {showSticky && (
