@@ -198,9 +198,6 @@ Temporal conflicts (different months/years in titles) are never flagged as dupli
 ### 3. Score (DEFCON 0-100)
 
 > Note: the scoring system is still a work in progress!
-> v2 scoring model is the newest model. Set `SCORER_VERSION=v2` in your environment to enable this model.
-> The default remains `v1` for backward compatibility.
-
 
 Scoring runs at two levels: each article gets its own score, and a separate global score determines the current DEFCON level.
 
@@ -245,13 +242,13 @@ Articles are upserted into PostgreSQL. Old articles are trimmed to keep 100 tota
 
 ## Makefile
 
-After any change to `triggers.py`, `vocabulary.py`, or `scorer*.py`: existing articles in the database keep their old score until rescored. Run `make prd-rescore` (or `make deploy` for a full push) to apply the new scoring to all articles.
+After any change to `triggers.py`, `vocabulary.py`, or `scoring.py`: existing articles in the database keep their old score until rescored. Run `make prd-rescore` (or `make deploy` for a full push) to apply the new scoring to all articles.
 
 | Command | What it does |
 |---|---|
 | `make deploy` | Full production deploy: `tofu apply` → rescore existing articles → flush API cache |
 | `make prd-rescore` | Rescore existing articles + flush API cache on PRD; run after any scoring change |
-| `make test` | Run scoring pipeline tests locally (`test_triggers`, `test_vocabulary`, `test_scoring_v2`) |
+| `make test` | Run scoring pipeline tests locally (`test_triggers`, `test_vocabulary`, `test_scoring`) |
 | `make test-all` | Run the full test suite locally |
 
 ## API endpoints
