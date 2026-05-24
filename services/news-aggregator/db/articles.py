@@ -120,11 +120,11 @@ async def get_new_article_count_since(pool: asyncpg.Pool, since: datetime) -> in
     return int(row["count"])
 
 
-async def get_articles_in_window(pool: asyncpg.Pool, hours: int = 24) -> list[dict]:
+async def get_articles_in_window(pool: asyncpg.Pool, hours: int = 72) -> list[dict]:
     """
-    Articles published in the last `hours` with non-zero defcon_score.
+    Articles published in the last `hours` (default 72) with non-zero defcon_score.
     Returns dicts with id, title, defcon_score, defcon_trigger, published_at.
-    Used by global scoring v2.
+    Used by global scoring v2; widest window the v2 scorer ever uses.
     """
     rows = await pool.fetch(
         """
