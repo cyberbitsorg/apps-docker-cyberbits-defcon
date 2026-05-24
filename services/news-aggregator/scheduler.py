@@ -169,7 +169,7 @@ async def run_fetch_cycle():
         )
         raw_level = _level_from_score(g.score)
         sticky_state = await read_sticky_state(pool)
-        sticky_result = compute_displayed_level(raw_level, sticky_state, datetime.now(timezone.utc))
+        sticky_result = compute_displayed_level(raw_level, sticky_state, now_utc)
         await write_sticky_state(pool, sticky_result)
         await insert_defcon_history_v2(
             pool, g,
