@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import asyncpg
 
 from config import settings
-from pipeline.scoring_v2 import compute_article_score_v2
+from pipeline.scoring import compute_article_score
 
 FETCH_QUERY = "SELECT id, title, summary FROM articles WHERE is_deleted = FALSE"
 UPDATE_QUERY = "UPDATE articles SET defcon_score=$1, defcon_trigger=$2 WHERE id=$3"
@@ -42,7 +42,7 @@ async def main() -> None:
                 summary = row["summary"] or ""
 
                 try:
-                    result = compute_article_score_v2(title, summary)
+                    result = compute_article_score(title, summary)
                     await conn.execute(UPDATE_QUERY, result.score, result.trigger, article_id)
                     updated += 1
                 except Exception as exc:

@@ -28,7 +28,7 @@ export interface DefconStatus {
   computed_at: string | null;
   factors: DefconFactors;
   trend: "rising" | "falling" | "stable";
-  // v2 fields (optional for back-compat with old rows)
+  // optional — absent on pre-cutover history rows
   trigger?: TriggerType | null;
   trigger_article?: TriggerArticle | null;
   raw_level?: number;

@@ -24,7 +24,7 @@ _CVE_ID_RE = re.compile(r"\bCVE[-–— ]?\d{4}[-–— ]?\d{3,}\b", re.IGNORECA
 _SEVERITY_WORDS = {"critical": 9.0, "high": 7.0, "medium": 5.0, "low": 2.5}
 
 
-def _extract_cvss_v2(text: str) -> float:
+def _extract_cvss(text: str) -> float:
     """
     Best CVSS score (0-10).
 
@@ -71,7 +71,7 @@ def _extract_cvss_v2(text: str) -> float:
     return 0.0
 
 
-def _extract_impact_raw_v2(text: str) -> int:
+def _extract_impact_raw(text: str) -> int:
     """Track B impact signals. 'actively exploited' removed — that is now a Track A trigger."""
     raw = 0
     if re.search(r"power grid|hospital|water treatment|government|military|critical infrastructure", text, re.IGNORECASE):
@@ -101,9 +101,9 @@ def _extract_impact_raw_v2(text: str) -> int:
 _IMPACT_CAP = 12  # rebalanced for v2 (was 15 with the removed actively-exploited clause)
 
 
-def _extract_impact_score_v2(text: str) -> float:
+def _extract_impact_score(text: str) -> float:
     """Impact dimension scaled to 0-25."""
-    return min(_extract_impact_raw_v2(text) / _IMPACT_CAP, 1.0) * 25.0
+    return min(_extract_impact_raw(text) / _IMPACT_CAP, 1.0) * 25.0
 
 
 def _extract_keyword_raw(text: str) -> int:
@@ -149,14 +149,14 @@ class ArticleScore:
 
 def _compute_track_b_unclamped(text: str) -> tuple[float, float, float]:
     """Return (cve, impact, keywords) dimension scores — pre-cap."""
-    cve_raw     = _extract_cvss_v2(text)
+    cve_raw     = _extract_cvss(text)
     cve_score   = (cve_raw / 10.0) * 30.0
-    impact_score = _extract_impact_score_v2(text)
+    impact_score = _extract_impact_score(text)
     keyword_score = _extract_keyword_score_normalized(text)
     return cve_score, impact_score, keyword_score
 
 
-def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
+def compute_article_score(title: str, summary: str) -> ArticleScore:
     text = f"{title} {summary}".lower()
     if not text.strip():
         return ArticleScore(score=0.0, trigger=None, track_a=0.0, track_b=0.0)
@@ -229,7 +229,7 @@ def _age_hours(published_at: datetime) -> float:
     return (now - published_at).total_seconds() / 3600.0
 
 
-def compute_global_score_v2(
+def compute_global_score(
     articles_in_window: list[dict],
     new_count: int,
     baseline: Optional[float],

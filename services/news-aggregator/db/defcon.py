@@ -3,7 +3,7 @@ import json
 
 import asyncpg
 
-from pipeline.scoring_v2 import GlobalScore
+from pipeline.scoring import GlobalScore
 
 logger = logging.getLogger(__name__)
 

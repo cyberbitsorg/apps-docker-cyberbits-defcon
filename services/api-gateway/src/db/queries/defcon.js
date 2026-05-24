@@ -54,7 +54,7 @@ async function getCurrentDefcon() {
         published_at: factors.trigger_article_published_at ?? null,
       }
     : null;
-  const raw_level       = factors.raw_level ?? row.level;
+  const raw_level       = factors.raw_level       ?? row.level;
   const displayed_level = factors.displayed_level ?? row.level;
 
   // Read sticky_until from last_refresh
