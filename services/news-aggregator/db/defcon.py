@@ -3,29 +3,12 @@ import json
 
 import asyncpg
 
-from pipeline.scorer import DefconFactors
 from pipeline.scoring_v2 import GlobalScore
 
 logger = logging.getLogger(__name__)
 
 
-async def insert_defcon_history_v1(pool: asyncpg.Pool, factors: DefconFactors, article_window: int):
-    try:
-        await pool.execute(
-            """
-            INSERT INTO defcon_history (score, level, article_window, contributing_factors)
-            VALUES ($1, $2, $3, $4::jsonb)
-            """,
-            factors.total,
-            factors.level,
-            article_window,
-            json.dumps(factors.to_dict()),
-        )
-    except Exception as e:
-        logger.error(f"insert_defcon_history_v1 error: {e}")
-
-
-async def insert_defcon_history_v2(
+async def insert_defcon_history(
     pool: asyncpg.Pool,
     g: GlobalScore,
     raw_level: int,
@@ -56,8 +39,4 @@ async def insert_defcon_history_v2(
             json.dumps(factors),
         )
     except Exception as e:
-        logger.error(f"insert_defcon_history_v2 error: {e}")
-
-
-# Backwards-compatible alias for any callers still importing the old name
-insert_defcon_history = insert_defcon_history_v1
+        logger.error(f"insert_defcon_history error: {e}")

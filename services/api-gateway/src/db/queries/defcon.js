@@ -46,7 +46,6 @@ async function getCurrentDefcon() {
     else if (delta < -5) trend = "falling";
   }
 
-  // v2 fields (present only when contributing_factors has the new shape)
   const trigger = factors.trigger ?? null;
   const trigger_article = factors.trigger_article_id
     ? {
@@ -55,7 +54,7 @@ async function getCurrentDefcon() {
         published_at: factors.trigger_article_published_at ?? null,
       }
     : null;
-  const raw_level      = factors.raw_level      ?? row.level;
+  const raw_level       = factors.raw_level ?? row.level;
   const displayed_level = factors.displayed_level ?? row.level;
 
   // Read sticky_until from last_refresh

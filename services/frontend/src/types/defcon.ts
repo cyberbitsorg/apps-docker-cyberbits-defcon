@@ -1,10 +1,4 @@
 export interface DefconFactors {
-  // v1 (legacy — present on rows pre-cutover)
-  volume_score?: number;
-  cve_score?: number;
-  impact_score?: number;
-  keyword_score?: number;
-  // v2
   trigger?: TriggerType | null;
   trigger_article_id?: string;
   trigger_article_title?: string;
