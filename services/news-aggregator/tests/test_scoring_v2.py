@@ -414,3 +414,15 @@ def test_window_hours_weekend_sunday():
     # 2026-05-24 is a Sunday
     sunday = datetime(2026, 5, 24, 14, 0, tzinfo=timezone.utc)
     assert _current_window_hours(sunday) == 72.0
+
+
+def test_global_v2_exposes_winner_published_at():
+    arts = [_article(60, age_hours=5, aid="w")]
+    g = compute_global_score_v2(arts, new_count=0, baseline=None, window_hours=48.0)
+    assert g.trigger_article_published_at is not None
+    assert g.trigger_article_published_at == arts[0]["published_at"]
+
+
+def test_global_v2_empty_window_no_published_at():
+    g = compute_global_score_v2(articles_in_window=[], new_count=0, baseline=None, window_hours=48.0)
+    assert g.trigger_article_published_at is None

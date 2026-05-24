@@ -206,6 +206,7 @@ class GlobalScore:
     trigger: Optional[TriggerType]
     trigger_article_id: Optional[str]
     trigger_article_title: Optional[str]
+    trigger_article_published_at: Optional[datetime]
 
 
 _WINDOW_HOURS_WEEKDAY = 48.0
@@ -271,4 +272,5 @@ def compute_global_score_v2(
         trigger=winner["defcon_trigger"] if winner else None,
         trigger_article_id=str(winner["id"]) if winner else None,
         trigger_article_title=winner["title"] if winner else None,
+        trigger_article_published_at=winner["published_at"] if winner else None,
     )
