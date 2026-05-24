@@ -360,3 +360,40 @@ def test_real_kev_article_still_triggers():
     summary = "CISA has added three Linux kernel flaws to the Known Exploited Vulnerabilities catalog."
     art = compute_article_score_v2(title, summary)
     assert art.trigger == "kev_addition"
+
+
+from datetime import datetime, timezone
+from pipeline.scoring_v2 import (
+    _current_window_hours,
+    _WINDOW_HOURS_WEEKDAY,
+    _WINDOW_HOURS_WEEKEND,
+)
+
+
+def test_window_hours_constants():
+    assert _WINDOW_HOURS_WEEKDAY == 48.0
+    assert _WINDOW_HOURS_WEEKEND == 72.0
+
+
+def test_window_hours_weekday_monday():
+    # 2026-05-25 is a Monday
+    monday = datetime(2026, 5, 25, 12, 0, tzinfo=timezone.utc)
+    assert _current_window_hours(monday) == 48.0
+
+
+def test_window_hours_weekday_friday():
+    # 2026-05-29 is a Friday
+    friday = datetime(2026, 5, 29, 23, 30, tzinfo=timezone.utc)
+    assert _current_window_hours(friday) == 48.0
+
+
+def test_window_hours_weekend_saturday():
+    # 2026-05-23 is a Saturday
+    saturday = datetime(2026, 5, 23, 0, 1, tzinfo=timezone.utc)
+    assert _current_window_hours(saturday) == 72.0
+
+
+def test_window_hours_weekend_sunday():
+    # 2026-05-24 is a Sunday
+    sunday = datetime(2026, 5, 24, 14, 0, tzinfo=timezone.utc)
+    assert _current_window_hours(sunday) == 72.0

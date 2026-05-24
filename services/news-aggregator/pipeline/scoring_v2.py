@@ -10,6 +10,7 @@ displayed-level state machine.
 import math
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Optional
 
 from pipeline.vocabulary import TIER1, TIER2, TIER3, WB_REQUIRED
@@ -197,9 +198,6 @@ def compute_article_score_v2(title: str, summary: str) -> ArticleScore:
     )
 
 
-from datetime import datetime, timezone
-
-
 @dataclass(frozen=True)
 class GlobalScore:
     score: float
@@ -211,6 +209,15 @@ class GlobalScore:
 
 
 _WINDOW_HOURS = 24.0
+_WINDOW_HOURS_WEEKDAY = 48.0
+_WINDOW_HOURS_WEEKEND = 72.0
+
+
+def _current_window_hours(now: datetime) -> float:
+    """Return the active decay window in hours. 72h on Sat/Sun (UTC), 48h otherwise."""
+    return _WINDOW_HOURS_WEEKEND if now.weekday() in (5, 6) else _WINDOW_HOURS_WEEKDAY
+
+
 _VOLUME_BONUS_CAP = 10.0
 
 
