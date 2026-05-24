@@ -49,7 +49,11 @@ async function getCurrentDefcon() {
   // v2 fields (present only when contributing_factors has the new shape)
   const trigger = factors.trigger ?? null;
   const trigger_article = factors.trigger_article_id
-    ? { id: factors.trigger_article_id, title: factors.trigger_article_title }
+    ? {
+        id: factors.trigger_article_id,
+        title: factors.trigger_article_title,
+        published_at: factors.trigger_article_published_at ?? null,
+      }
     : null;
   const raw_level      = factors.raw_level      ?? row.level;
   const displayed_level = factors.displayed_level ?? row.level;
