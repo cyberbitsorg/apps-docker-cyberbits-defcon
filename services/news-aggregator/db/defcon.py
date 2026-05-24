@@ -42,6 +42,8 @@ async def insert_defcon_history_v2(
     if g.trigger_article_id is not None:
         factors["trigger_article_id"] = g.trigger_article_id
         factors["trigger_article_title"] = g.trigger_article_title
+        if g.trigger_article_published_at is not None:
+            factors["trigger_article_published_at"] = g.trigger_article_published_at.isoformat()
     try:
         await pool.execute(
             """
