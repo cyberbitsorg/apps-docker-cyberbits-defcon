@@ -172,8 +172,14 @@ def compute_article_score(title: str, summary: str) -> ArticleScore:
     track_b_unclamped = cve + impact + kw + title_kw_boost
     track_b_final = min(track_b_unclamped, 80.0)
 
+    is_newsletter = _is_newsletter_title(title)
+    if is_newsletter:
+        # Recaps bundle many unrelated threats; their keyword density inflates Track B
+        # even though no single item carries the dense article's severity.
+        track_b_final *= 0.5
+
     trigger_match = detect_trigger(text)
-    if trigger_match is not None and _is_newsletter_title(title):
+    if trigger_match is not None and is_newsletter:
         trigger_match = None
     if trigger_match is not None:
         base = TRIGGER_BASE[trigger_match.trigger]

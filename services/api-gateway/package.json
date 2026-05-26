@@ -1,6 +1,6 @@
 {
   "name": "defcon-api-gateway",
-  "version": "1.14.2",
+  "version": "1.14.3",
   "description": "Cybersecurity Defcon Dashboard API Gateway",
   "main": "src/index.js",
   "scripts": {
