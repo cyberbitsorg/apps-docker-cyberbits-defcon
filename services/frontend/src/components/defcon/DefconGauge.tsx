@@ -247,8 +247,9 @@ export function DefconGauge({ status, history }: DefconGaugeProps) {
                 />
                 <Tooltip
                   contentStyle={{ background: "#111827", border: "1px solid #374151", borderRadius: 6, fontSize: 11 }}
-                  formatter={(v: number) => [v.toFixed(1), "Score"]}
-                  labelFormatter={(idx: number) => {
+                  formatter={(v) => [typeof v === "number" ? v.toFixed(1) : String(v ?? ""), "Score"]}
+                  labelFormatter={(label) => {
+                    const idx = typeof label === "number" ? label : Number(label);
                     const point = history[idx];
                     if (!point) return "";
                     return new Date(point.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

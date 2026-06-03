@@ -27,8 +27,8 @@ export function useArticles(filters: ArticleFilters = { severity: null, source: 
   const [tick, setTick] = useState(0);
   const [page, setPage] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
-  const tickRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const tickRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(filters.search), 400);
