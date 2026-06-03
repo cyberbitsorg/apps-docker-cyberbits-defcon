@@ -1,6 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-defcon-1: #22c55e;
+  --color-defcon-2: #3b82f6;
+  --color-defcon-3: #f59e0b;
+  --color-defcon-4: #ea580c;
+  --color-defcon-5: #dc2626;
+
+  --font-family-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
 
 @layer base {
   html {
