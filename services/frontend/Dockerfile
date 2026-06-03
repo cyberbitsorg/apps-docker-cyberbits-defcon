@@ -1,4 +1,4 @@
-FROM node:20-alpine3.21 AS builder
+FROM node:20-alpine3.23 AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:alpine3.21
+FROM nginxinc/nginx-unprivileged:1.27.5-alpine3.21
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
