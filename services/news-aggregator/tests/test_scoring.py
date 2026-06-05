@@ -204,15 +204,86 @@ def test_global_v2_picks_highest_weighted():
 
 
 def test_global_v2_age_decays_weight():
-    # 90-pt article, 36h old, with 48h window: weight = (48-36)/48 = 0.25 → contribution = 22.5
-    # 50-pt article, 0h old, weight = 1.0 → contribution = 50
+    # 90-pt article, 36h old, with 48h window: weight = (48-36)/48 = 0.25 → ws = 22.5
+    # 50-pt article, 0h old, weight = 1.0 → ws = 50
+    # Distribution blend of top two: 0.6*50 + 0.4*22.5 = 39. The aged active_exploitation
+    # spike (ws 22.5) does not exceed the blend, so the blend drives the score and the
+    # fresh article is the headline winner.
     arts = [
         _article(90, trigger="active_exploitation", age_hours=36, aid="old"),
         _article(50, trigger=None, age_hours=0, aid="fresh"),
     ]
     g = compute_global_score(arts, new_count=5, baseline=5.0, window_hours=48.0)
     assert g.trigger_article_id == "fresh"
-    assert g.weighted_max == pytest.approx(50.0)
+    assert g.weighted_max == pytest.approx(39.0)
+
+
+# --- distribution-aware aggregation (v2.1): one lone article must not max the gauge ---
+
+def test_global_v2_lone_high_non_toptier_pulled_down_by_distribution():
+    # One genuinely-high malware_campaign article (65) with the rest of the field low.
+    # Pure max would report 65; the top-2 blend pulls it toward the field: 0.6*65 + 0.4*45 = 57.
+    arts = [
+        _article(65, trigger="malware_campaign", age_hours=0, aid="lone"),
+        _article(45, trigger=None, age_hours=0, aid="second"),
+        _article(10, trigger=None, age_hours=0, aid="low1"),
+        _article(5, trigger=None, age_hours=0, aid="low2"),
+    ]
+    g = compute_global_score(arts, new_count=0, baseline=None, window_hours=48.0)
+    assert g.weighted_max == pytest.approx(57.0)
+    assert g.weighted_max < 65.0  # the lone article alone no longer drives the gauge
+    assert g.trigger_article_id == "lone"  # still the headline threat
+
+
+def test_global_v2_toptier_single_event_still_spikes():
+    # A lone decisive top-tier trigger (actively exploited) must still spike the gauge
+    # even when the rest of the field is quiet — that is the point of a DEFCON spike.
+    arts = [
+        _article(80, trigger="active_exploitation", age_hours=0, aid="crit"),
+        _article(20, trigger=None, age_hours=0, aid="low1"),
+        _article(15, trigger=None, age_hours=0, aid="low2"),
+    ]
+    g = compute_global_score(arts, new_count=0, baseline=None, window_hours=48.0)
+    assert g.weighted_max == pytest.approx(80.0)
+    assert g.trigger == "active_exploitation"
+    assert g.trigger_article_id == "crit"
+
+
+def test_global_v2_malware_campaign_does_not_get_spike_carveout():
+    # malware_campaign is NOT a top-tier spike trigger — a lone one is still blended down.
+    arts = [
+        _article(65, trigger="malware_campaign", age_hours=0, aid="lone"),
+        _article(30, trigger=None, age_hours=0, aid="second"),
+    ]
+    g = compute_global_score(arts, new_count=0, baseline=None, window_hours=48.0)
+    assert g.weighted_max == pytest.approx(0.6 * 65 + 0.4 * 30)  # 51, not 65
+
+
+def test_global_v2_two_high_articles_reach_high_score():
+    # Corroborated threat: two heavy articles together SHOULD climb into level 2.
+    arts = [
+        _article(65, trigger="malware_campaign", age_hours=0, aid="a"),
+        _article(62, trigger="malware_campaign", age_hours=0, aid="b"),
+    ]
+    g = compute_global_score(arts, new_count=0, baseline=None, window_hours=48.0)
+    assert g.weighted_max == pytest.approx(0.6 * 65 + 0.4 * 62)  # 63.8 → level 2
+
+
+# --- volume bonus baseline floor (v2.1): sparse per-cycle counts must not saturate ---
+
+def test_global_v2_volume_bonus_low_baseline_single_article_no_bonus():
+    # Production reality: baseline ≈ 0.16 (mostly 0/1 per cycle). A single new article
+    # must NOT register as a surge. The absolute baseline floor prevents the ratio blow-up.
+    arts = [_article(50, age_hours=0)]
+    g = compute_global_score(arts, new_count=1, baseline=0.16, window_hours=48.0)
+    assert g.volume_bonus == 0.0
+
+
+def test_global_v2_volume_bonus_floor_requires_real_surge():
+    # Even a few new articles against a tiny baseline stay below the floor.
+    arts = [_article(50, age_hours=0)]
+    g = compute_global_score(arts, new_count=3, baseline=0.5, window_hours=48.0)
+    assert g.volume_bonus == 0.0
 
 
 def test_global_v2_uses_passed_window_weekday():

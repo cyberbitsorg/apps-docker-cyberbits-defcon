@@ -4,8 +4,9 @@ DEFCON Scoring v2 — decisive paths + capped stacking.
 Per-article: max(track_a, track_b), capped 100. Track A = trigger base + Track B bonus
 capped at 10. Track B = sum of CVE/impact/keyword dimensions, capped at 80.
 
-Global: weighted-max of article scores in last 24h, plus volume bonus, plus sticky
-displayed-level state machine.
+Global: distribution-aware blend of the top-2 weighted article scores (with a
+single-event spike carve-out for decisive top-tier triggers), plus volume bonus,
+plus sticky displayed-level state machine.
 """
 import math
 import re
@@ -218,6 +219,22 @@ class GlobalScore:
 _WINDOW_HOURS_WEEKDAY = 48.0
 _WINDOW_HOURS_WEEKEND = 72.0
 
+# Distribution-aware aggregation: the global score is a weighted blend of the two
+# highest-scoring articles, so a single article can no longer max the gauge on its own.
+_BLEND_W1 = 0.6
+_BLEND_W2 = 0.4
+
+# Single-event spike carve-out: a lone *decisive* trigger may still drive the gauge by
+# itself — that is the point of a DEFCON spike. Mid-tier triggers (malware_campaign,
+# apt_campaign, breach…) must be corroborated by the wider field via the blend.
+_SPIKE_TRIGGERS = frozenset({"active_exploitation", "kev_addition", "ceiling_cvss"})
+
+# Absolute floor for the volume baseline. The per-cycle new-article count is sparse
+# (often 0-1 after dedup), so the raw rolling baseline (~0.16) makes a single new
+# article look like a multi-x surge. Flooring the baseline keeps the volume bonus
+# dormant unless there is a genuine flood of fresh articles.
+_MIN_VOLUME_BASELINE = 5.0
+
 
 def _current_window_hours(now: datetime) -> float:
     """Return the active decay window in hours. 72h on Sat/Sun (UTC), 48h otherwise."""
@@ -244,6 +261,10 @@ def compute_global_score(
     """
     Global v2 score = clamp(weighted_max + volume_bonus, 0, 100).
 
+    `weighted_max` is distribution-aware: a blend of the two highest weighted article
+    scores (0.6/0.4), so one lone article cannot max the gauge. A lone *decisive*
+    top-tier trigger (see `_SPIKE_TRIGGERS`) still spikes on its own via a carve-out.
+
     Each article in `articles_in_window` must have:
       id, title, defcon_score, defcon_trigger, published_at (datetime, tz-aware preferred).
 
@@ -254,19 +275,39 @@ def compute_global_score(
     if window_hours is None:
         window_hours = _current_window_hours(datetime.now(timezone.utc))
 
-    weighted_max = 0.0
-    winner: Optional[dict] = None
+    # Weighted score per article, sorted most-significant first.
+    scored: list[tuple[float, dict]] = []
     for art in articles_in_window:
         weight = max(0.0, 1.0 - _age_hours(art["published_at"]) / window_hours)
-        contribution = float(art["defcon_score"]) * weight
-        if contribution > weighted_max:
-            weighted_max = contribution
-            winner = art
+        scored.append((float(art["defcon_score"]) * weight, art))
+    scored.sort(key=lambda t: t[0], reverse=True)
+
+    # Distribution blend of the top two weighted articles.
+    if not scored:
+        blend, blend_winner = 0.0, None
+    elif len(scored) == 1:
+        blend, blend_winner = scored[0][0], scored[0][1]
+    else:
+        blend = _BLEND_W1 * scored[0][0] + _BLEND_W2 * scored[1][0]
+        blend_winner = scored[0][1]
+
+    # Single-event spike carve-out: highest weighted top-tier-trigger article.
+    spike_max = 0.0
+    spike_winner: Optional[dict] = None
+    for ws, art in scored:
+        if art["defcon_trigger"] in _SPIKE_TRIGGERS and ws > spike_max:
+            spike_max, spike_winner = ws, art
+
+    if spike_max > blend:
+        weighted_max, winner = spike_max, spike_winner
+    else:
+        weighted_max, winner = blend, blend_winner
 
     if baseline is None or baseline <= 0:
         volume_bonus = 0.0
     else:
-        ratio = new_count / baseline
+        effective_baseline = max(baseline, _MIN_VOLUME_BASELINE)
+        ratio = new_count / effective_baseline
         volume_bonus = max(0.0, min((ratio - 1.0) * 10.0, _VOLUME_BONUS_CAP))
 
     total = min(weighted_max + volume_bonus, 100.0)
