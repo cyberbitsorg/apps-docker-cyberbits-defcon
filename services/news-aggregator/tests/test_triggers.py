@@ -87,10 +87,58 @@ def test_trigger_base_scores():
     assert TRIGGER_BASE["kev_addition"] == 70
     assert TRIGGER_BASE["ceiling_cvss"] == 65
     assert TRIGGER_BASE["supply_chain_compromise"] == 65
+    assert TRIGGER_BASE["public_exploit"] == 65
     assert TRIGGER_BASE["critical_scope_vuln"] == 65
     assert TRIGGER_BASE["confirmed_breach"] == 65
     assert TRIGGER_BASE["apt_campaign"] == 60
     assert TRIGGER_BASE["malware_campaign"] == 55
+
+
+# --- public_exploit: released exploit/PoC code for a vulnerability ---
+
+def test_public_exploit_exploit_code_for_zero_day():
+    text = "microsoft's worst nightmare unleashes bitlocker bypass 0-day, another windows exploit code"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "public_exploit"
+
+
+def test_public_exploit_published_exploit_for_bypass():
+    text = ("security researcher has released a new windows bitlocker bypass dubbed greatxml, "
+            "a day after they published an exploit for microsoft defender")
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "public_exploit"
+
+
+def test_public_exploit_proof_of_concept():
+    text = "researcher drops proof-of-concept exploit for unpatched fortinet rce flaw"
+    match = detect_trigger(text)
+    assert match is not None and match.trigger == "public_exploit"
+
+
+def test_public_exploit_yields_to_active_exploitation():
+    # Active exploitation outranks a merely-public exploit.
+    text = "exploit code released for zero-day now actively exploited in the wild"
+    assert detect_trigger(text).trigger == "active_exploitation"
+
+
+def test_public_exploit_negated_no_public_exploit():
+    text = "critical flaw disclosed but no public exploit is available yet"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "public_exploit"
+
+
+def test_public_exploit_not_fired_by_generic_exploit_mention():
+    # "could be exploited" with no release signal must not fire public_exploit.
+    text = "vendor warns the bug could be exploited by attackers in the future"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "public_exploit"
+
+
+def test_public_exploit_contest_excluded():
+    # Pwn2Own/ZDI exploits are responsibly disclosed research, not public weapons.
+    text = "researcher released exploit code for windows zero-day at pwn2own berlin"
+    match = detect_trigger(text)
+    assert match is None or match.trigger != "public_exploit"
 
 
 # --- ceiling_cvss: explicit CVSS >= 9.8 fires a decisive trigger ---

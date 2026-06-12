@@ -134,3 +134,23 @@ def test_is_batch_duplicate_first_trigger_escalation_allowed():
     seen = [("Vendor X advises customers about CVE-2026-1234", "", None)]
     title = "Active exploitation of CVE-2026-1234 spotted in the wild"
     assert is_batch_duplicate(title, "actively exploited", seen) is False
+
+
+def test_shared_vendor_product_recognizes_oracle_peoplesoft():
+    from pipeline.deduplicator import _shared_vendor_product
+    assert _shared_vendor_product(
+        "Oracle mitigates PeopleSoft zero-day exploited in attacks",
+        "ShinyHunters hacked 100 orgs via Oracle PeopleSoft 0-day",
+    ) == "oracle peoplesoft"
+
+
+def test_is_batch_duplicate_oracle_peoplesoft_campaign():
+    # Same ShinyHunters/Oracle PeopleSoft 0-day story, very different headlines.
+    seen = [(
+        "Oracle mitigates PeopleSoft zero-day exploited in data theft attacks",
+        "Oracle is warning about a critical PeopleSoft Suite zero-day tracked as "
+        "CVE-2026-35273 allowing unauthenticated RCE, actively exploited by ShinyHunters",
+        "active_exploitation",
+    )]
+    title = "ShinyHunters claims it hacked 100 orgs by exploiting an Oracle PeopleSoft 0-day"
+    assert is_batch_duplicate(title, "University of Nottingham is first of many", seen) is True

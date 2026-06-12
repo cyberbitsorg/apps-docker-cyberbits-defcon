@@ -497,3 +497,25 @@ def test_global_v2_exposes_winner_published_at():
 def test_global_v2_empty_window_no_published_at():
     g = compute_global_score(articles_in_window=[], new_count=0, baseline=None, window_hours=48.0)
     assert g.trigger_article_published_at is None
+
+
+# --- regression: released 0-day exploit must score on Track A, not bottom out ---
+
+def test_released_zero_day_exploit_scores_high():
+    # The Register: "0-day" spelling + released exploit code.
+    sc = compute_article_score(
+        "Microsoft's worst 'Nightmare' unleashes BitLocker bypass 0-day",
+        "Another day, another Windows exploit code",
+    )
+    assert sc.trigger == "public_exploit"
+    assert sc.score >= 65
+
+
+def test_published_bitlocker_bypass_exploit_scores_high():
+    sc = compute_article_score(
+        "New GreatXML Exploit Bypasses Windows BitLocker via Recovery Partition XML Files",
+        "Security researcher has released a new Windows BitLocker bypass dubbed GreatXML, "
+        "a day after they published an exploit for Microsoft Defender.",
+    )
+    assert sc.trigger == "public_exploit"
+    assert sc.score >= 65

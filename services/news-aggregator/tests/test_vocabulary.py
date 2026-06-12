@@ -103,3 +103,15 @@ def test_malicious_dependency_in_tier1():
 
 def test_package_registry_in_critical_sectors():
     assert "package registry" in CRITICAL_SECTORS
+
+
+def test_tier1_has_numeric_zero_day_spellings():
+    # Headlines commonly write "0-day"/"0day"/"0 day" — must score like "zero-day".
+    for kw in ("0-day", "0day", "0 day"):
+        assert kw in TIER1, f"TIER1 missing {kw!r}"
+
+
+def test_numeric_zero_day_forms_are_word_boundary_matched():
+    # Must be word-boundary matched so "10-day trial" / "10 day forecast" don't match.
+    for kw in ("0-day", "0day", "0 day"):
+        assert kw in WB_REQUIRED, f"{kw!r} must be in WB_REQUIRED"

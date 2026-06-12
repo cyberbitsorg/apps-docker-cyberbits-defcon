@@ -9,7 +9,8 @@ WB_REQUIRED = short tokens that need word-boundary matching to avoid false posit
 """
 
 TIER1 = [
-    "zero-day", "zero day", "nation-state", "nation state",
+    "zero-day", "zero day", "0-day", "0day", "0 day",
+    "nation-state", "nation state",
     "state-sponsored", "state sponsored",
     "ransomware attack", "critical infrastructure",
     "infostealer", "stealer campaign", "malware campaign",
@@ -67,5 +68,6 @@ KNOWN_STEALERS = [
 ]
 
 # Short terms that appear as substrings in unrelated words ("rce" in "force",
-# "apt" in "capture", "rat" in "rate", "celebrate", etc.)
-WB_REQUIRED = frozenset({"rce", "apt", "rat"})
+# "apt" in "capture", "rat" in "rate", "celebrate", etc.) and the numeric
+# "0-day" spellings, which must not match "10-day trial" / "10 day forecast".
+WB_REQUIRED = frozenset({"rce", "apt", "rat", "0-day", "0day", "0 day"})

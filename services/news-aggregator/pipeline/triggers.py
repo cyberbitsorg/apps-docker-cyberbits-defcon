@@ -8,8 +8,10 @@ A "trigger" is a high-confidence pattern that alone justifies an elevated DEFCON
   - confirmed_breach: named/scaled data breach
   - apt_campaign: nation-state / named-actor campaign with target
   - malware_campaign: stealer/loader/RAT or known stealer name + campaign verb
+  - public_exploit: working exploit/PoC code publicly released for a vulnerability
 
-Precedence (highest first): active_exploitation > kev_addition > critical_scope_vuln
+Precedence (highest first): active_exploitation > kev_addition > ceiling_cvss
+  > supply_chain_compromise > public_exploit > critical_scope_vuln
   > confirmed_breach > apt_campaign > malware_campaign.
 """
 import re
@@ -21,7 +23,7 @@ from pipeline.vocabulary import THREAT_ACTORS, CRITICAL_SECTORS, KNOWN_STEALERS
 TriggerType = Literal[
     "active_exploitation", "confirmed_breach", "apt_campaign",
     "kev_addition", "critical_scope_vuln", "malware_campaign",
-    "ceiling_cvss", "supply_chain_compromise",
+    "ceiling_cvss", "supply_chain_compromise", "public_exploit",
 ]
 
 TRIGGER_BASE: dict[TriggerType, int] = {
@@ -29,6 +31,7 @@ TRIGGER_BASE: dict[TriggerType, int] = {
     "kev_addition": 70,
     "ceiling_cvss": 65,
     "supply_chain_compromise": 65,
+    "public_exploit": 65,
     "critical_scope_vuln": 65,
     "confirmed_breach": 65,
     "apt_campaign": 60,
@@ -41,6 +44,7 @@ PRECEDENCE: tuple[TriggerType, ...] = (
     "kev_addition",
     "ceiling_cvss",
     "supply_chain_compromise",
+    "public_exploit",
     "critical_scope_vuln",
     "confirmed_breach",
     "apt_campaign",
@@ -310,11 +314,46 @@ def _match_supply_chain_compromise(text: str) -> Optional[str]:
     return artifact.group(0)
 
 
+# --- public_exploit: working exploit / PoC code publicly released ---
+
+# Release/availability signals — each independently implies a real, public exploit.
+_PUBLIC_EXPLOIT_RELEASE_PATTERNS = [
+    r"\bexploit code\b",
+    r"\bpublic(?:ly available)? exploit\b",
+    r"\bproof[- ]of[- ]concept\b",
+    r"\bpoc\s+(?:exploit|code|available|released|published|now public)\b",
+    r"\b(released?|releases?|publish(?:ed|es)?|drops?|dropped|posts?|posted|leak(?:ed|s)?)\b[^.\n]{0,40}\bexploit\b",
+    r"\bexploit\b[^.\n]{0,25}\b(released?|published|now public|posted|available online|now available)\b",
+]
+
+# A release signal alone is generic — require a concrete vulnerability indicator too.
+_EXPLOIT_VULN_INDICATOR_RE = re.compile(
+    r"\b(0[- ]?day|zero[- ]?day|bypass(?:es|ed)?|rce|remote code execution|flaw|bug|"
+    r"vulnerabilit(?:y|ies)|cve|privilege escalation|unauthenticated|backdoor)\b",
+    re.IGNORECASE,
+)
+
+
+def _match_public_exploit(text: str) -> Optional[str]:
+    if not _EXPLOIT_VULN_INDICATOR_RE.search(text):
+        return None
+    for pattern in _PUBLIC_EXPLOIT_RELEASE_PATTERNS:
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            span = m.group(0)
+            # Pre-window negation ("no public exploit") + intra-span negation
+            # ("exploit ... has not been released").
+            if _is_negated(text, m.start()) or _NEGATION_WORDS_RE.search(span):
+                continue
+            return span
+    return None
+
+
 _DETECTORS = {
     "active_exploitation": _match_active_exploitation,
     "kev_addition": _match_kev,
     "ceiling_cvss": _match_ceiling_cvss,
     "supply_chain_compromise": _match_supply_chain_compromise,
+    "public_exploit": _match_public_exploit,
     "confirmed_breach": _match_breach,
     "apt_campaign": _match_apt,
     "critical_scope_vuln": _match_critical_scope_vuln,
@@ -326,12 +365,13 @@ def detect_trigger(text: str) -> Optional[TriggerMatch]:
     """Return the highest-precedence trigger fired by this text, or None.
 
     Contest/bug-bounty contexts (Pwn2Own, CTF, HackerOne) are excluded from
-    active_exploitation, kev_addition and critical_scope_vuln — their
-    'exploited' references describe controlled research, not in-the-wild attacks.
+    active_exploitation, kev_addition, critical_scope_vuln and public_exploit —
+    their 'exploited'/'exploit released' references describe responsibly disclosed
+    research, not in-the-wild attacks or public weapons.
     """
     contest = _is_contest_context(text)
     for trigger in PRECEDENCE:
-        if contest and trigger in ("active_exploitation", "kev_addition", "ceiling_cvss", "critical_scope_vuln"):
+        if contest and trigger in ("active_exploitation", "kev_addition", "ceiling_cvss", "critical_scope_vuln", "public_exploit"):
             continue
         matched = _DETECTORS[trigger](text)
         if matched:
