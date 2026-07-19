@@ -11,7 +11,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.27.5-alpine3.21
+FROM nginxinc/nginx-unprivileged:1.28.2-alpine3.23
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

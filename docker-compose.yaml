@@ -11,7 +11,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U defcon -d defcon_db"]
       interval: 10s
@@ -29,7 +28,6 @@ services:
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
-      - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test: ["CMD-SHELL", "REDISCLI_AUTH=$REDIS_PASSWORD redis-cli ping"]
       interval: 10s
@@ -50,8 +48,6 @@ services:
       FETCH_INTERVAL_MINUTES: "${FETCH_INTERVAL_MINUTES:-60}"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
       INTERNAL_SECRET: ${INTERNAL_SECRET}
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,8 +73,6 @@ services:
       AUTH_SECRET: ${AUTH_SECRET}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       INTERNAL_SECRET: ${INTERNAL_SECRET}
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
     ports:
       - "4000:4000"
     depends_on:
@@ -98,8 +92,6 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     container_name: defcon_frontend
     restart: unless-stopped
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
     ports:
       - "3000:8080"
     depends_on:
