@@ -50,6 +50,8 @@ The API gateway joins both production networks: `defcon-internal` to reach Postg
 
 ## Quick start (local / dev)
 
+> `docker-compose.yaml` is for local development only. Production is deployed via the OpenTofu stack in `tofu/` (see below) — changes to image versions or service code must be made/applied there to reach the server.
+
 ```bash
 cp .env.example .env        # Edit POSTGRES_PASSWORD and AUTH_SECRET
 podman compose up -d        # or: docker compose up -d

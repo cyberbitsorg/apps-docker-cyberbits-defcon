@@ -27,9 +27,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-# Ignore lock files (optional - you might want to commit these)
-# .opentofu.lock.hcl
-**/.terraform.lock.hcl
 
 # Plan files
 *.tfplan
