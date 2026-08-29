@@ -12,6 +12,7 @@ const defconRouter = require("./routes/defcon");
 const adminRouter = require("./routes/admin");
 const healthRouter = require("./routes/health");
 const internalRouter = require("./routes/internal");
+const { subscribeToInvalidation } = require("./cache/redis");
 
 const app = express();
 
@@ -41,4 +42,7 @@ app.use(errorHandler);
 
 app.listen(config.port, () => {
   console.log(`API gateway running on port ${config.port} [${config.nodeEnv}]`);
+  subscribeToInvalidation().catch((err) =>
+    console.error("Failed to subscribe to cache invalidation:", err.message)
+  );
 });

@@ -44,10 +44,12 @@ async function subscribeToInvalidation() {
   const sub = new Redis(config.redisUrl);
   sub.on("error", (err) => console.error("Redis sub error:", err.message));
 
-  sub.subscribe("channel:articles:updated", (err) => {
-    if (err) console.error("Subscribe error:", err.message);
-    else console.log("Subscribed to cache invalidation channel");
-  });
+  try {
+    await sub.subscribe("channel:articles:updated");
+    console.log("Subscribed to cache invalidation channel");
+  } catch (err) {
+    console.error("Subscribe error:", err.message);
+  }
 
   sub.on("message", (channel, message) => {
     if (channel === "channel:articles:updated") {
