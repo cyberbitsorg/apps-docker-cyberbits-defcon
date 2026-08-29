@@ -53,6 +53,7 @@ locals {
   api_gateway_hash = sha1(join("", concat(
     [filesha1("${local.services_root}/api-gateway/Dockerfile")],
     [filesha1("${local.services_root}/api-gateway/package.json")],
+    [filesha1("${local.services_root}/api-gateway/package-lock.json")],
     [for f in fileset("${local.services_root}/api-gateway/src", "**") :
     filesha1("${local.services_root}/api-gateway/src/${f}")]
   )))
@@ -60,6 +61,7 @@ locals {
   frontend_hash = sha1(join("", concat(
     [filesha1("${local.services_root}/frontend/Dockerfile")],
     [filesha1("${local.services_root}/frontend/package.json")],
+    [filesha1("${local.services_root}/frontend/package-lock.json")],
     [filesha1("${local.services_root}/frontend/nginx.conf")],
     [for f in fileset("${local.services_root}/frontend/src", "**") :
     filesha1("${local.services_root}/frontend/src/${f}")]
