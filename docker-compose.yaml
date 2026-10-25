@@ -1,7 +1,7 @@
 services:
 
   postgres:
-    image: postgres:16.15-alpine3.23
+    image: postgres:16.15-alpine3.24
     container_name: defcon_postgres
     restart: unless-stopped
     environment:
