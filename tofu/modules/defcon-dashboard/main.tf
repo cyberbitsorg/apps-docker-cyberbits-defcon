@@ -70,8 +70,11 @@ resource "docker_image" "news_aggregator" {
   name = "${var.name_prefix}-news-aggregator:latest"
 
   build {
-    context    = "${local.services_root}/news-aggregator"
-    dockerfile = "Dockerfile"
+    context             = "${local.services_root}/news-aggregator"
+    dockerfile          = "Dockerfile"
+    # buildx default in provider v4 does not load images on remote (ssh://) hosts;
+    # classic builder restores v3 behaviour. Revisit when provider handles it.
+    use_legacy_builder  = true
   }
 
   triggers = {
@@ -83,8 +86,9 @@ resource "docker_image" "api_gateway" {
   name = "${var.name_prefix}-api-gateway:latest"
 
   build {
-    context    = "${local.services_root}/api-gateway"
-    dockerfile = "Dockerfile"
+    context             = "${local.services_root}/api-gateway"
+    dockerfile          = "Dockerfile"
+    use_legacy_builder  = true
   }
 
   triggers = {
@@ -102,6 +106,7 @@ resource "docker_image" "frontend" {
       # Empty string → nginx proxies /api/ internally; no origin baked in
       VITE_API_BASE_URL = ""
     }
+    use_legacy_builder  = true
   }
 
   triggers = {
