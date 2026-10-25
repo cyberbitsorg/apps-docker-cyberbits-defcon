@@ -4,6 +4,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from typing import Optional
 
 import feedparser
@@ -65,7 +66,7 @@ class RssFeedParser(BaseFeedParser):
                         if delay is None:
                             logger.error(f"[{self.source_id}] Still 429 after {len(delays)} retries, giving up")
                             return []
-                        retry_after = int(response.headers.get("Retry-After", delay))
+                        retry_after = _parse_retry_after(response.headers.get("Retry-After"), delay)
                         logger.warning(f"[{self.source_id}] 429 on attempt {attempt}, retrying in {retry_after}s")
                         await asyncio.sleep(retry_after)
                         continue
@@ -109,6 +110,24 @@ class RssFeedParser(BaseFeedParser):
             categories=categories,
             raw_text=summary,
         )
+
+
+_RETRY_AFTER_MAX = 60  # cap server-requested backoff so one feed can't stall the cycle
+
+
+def _parse_retry_after(value: Optional[str], fallback: int) -> float:
+    """Retry-After header (seconds or HTTP-date) → sleep seconds, capped, falling back to `fallback`."""
+    if not value:
+        return float(fallback)
+    try:
+        return max(0.0, min(float(value), _RETRY_AFTER_MAX))
+    except ValueError:
+        pass
+    try:
+        delta = parsedate_to_datetime(value).timestamp() - datetime.now(timezone.utc).timestamp()
+        return max(0.0, min(delta, _RETRY_AFTER_MAX))
+    except (TypeError, ValueError):
+        return float(fallback)
 
 
 def _parse_date(date_str: Optional[str]) -> Optional[datetime]:
