@@ -60,7 +60,7 @@ variable "redis_maxmemory_policy" {
 variable "postgres_image" {
   description = "PostgreSQL Docker image"
   type        = string
-  default     = "postgres:16.15-alpine3.23"
+  default     = "postgres:16.15-alpine3.24"
 }
 
 variable "redis_image" {
