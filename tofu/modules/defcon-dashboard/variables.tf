@@ -66,7 +66,7 @@ variable "postgres_image" {
 variable "redis_image" {
   description = "Redis Docker image"
   type        = string
-  default     = "redis:7.4.11-alpine3.21"
+  default     = "redis:8.10.2-alpine3.23"
 }
 
 # =============================================================================
