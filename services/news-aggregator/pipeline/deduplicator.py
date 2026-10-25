@@ -1,8 +1,10 @@
 """
-Two-layer deduplication:
-  Layer 1 — Fast:   SHA-256 of normalized title tokens (Redis SET, O(1))
-  Layer 2 — Slow:   TF-IDF cosine similarity OR Jaccard token overlap,
-                    whichever fires first, vs last 50 titles
+Layered deduplication:
+  Layer 1  — Fast:  SHA-256 of normalized title tokens (Redis SET, O(1)),
+                    plus CVE-ID match with escalation window
+  Layer 0/2 — Slow: quoted-phrase / threat-actor / vendor+product overlap,
+                    Jaccard token overlap and TF-IDF cosine similarity,
+                    whichever fires first, vs last 300 titles
 """
 import hashlib
 import logging
