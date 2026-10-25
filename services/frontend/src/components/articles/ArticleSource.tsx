@@ -7,7 +7,7 @@ interface ArticleSourceProps {
 }
 
 export function ArticleSource({ source, sourceDisplay, defconColor }: ArticleSourceProps) {
-  const color = SOURCE_COLORS["bleeping_computer"];
+  const color = SOURCE_COLORS[source] ?? "#64748b"; // slate-500 fallback for unknown sources
   const abbr = SOURCE_LABELS[source] || sourceDisplay.slice(0, 3).toUpperCase();
   const borderColor = defconColor ?? color;
 
